@@ -1,0 +1,31 @@
+﻿---
+BasedOnStyle: Microsoft
+AccessModifierOffset: '0'
+AlignEscapedNewlines: Left
+#IndentAccessModifiers: 'true'
+AlignTrailingComments: 'true'
+BinPackArguments: 'false'
+BinPackParameters: 'false'
+BreakBeforeBraces: Attach
+BreakConstructorInitializers: AfterColon
+BreakStringLiterals: 'true'
+IncludeBlocks: Regroup
+IndentCaseLabels: 'true'
+IndentPPDirectives: BeforeHash
+IndentWidth: '4'
+IndentWrappedFunctionNames: 'true'
+KeepEmptyLinesAtTheStartOfBlocks: 'false'
+MaxEmptyLinesToKeep: '1'
+NamespaceIndentation: All
+PointerAlignment: Right
+ReflowComments: 'true'
+SpaceAfterLogicalNot: 'false'
+SpaceAfterTemplateKeyword: 'false'
+SpaceBeforeAssignmentOperators: 'true'
+SpaceBeforeInheritanceColon: 'false'
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: 'false'
+TabWidth: '4'
+UseTab: ForIndentation
+
+...

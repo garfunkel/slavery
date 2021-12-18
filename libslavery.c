@@ -173,15 +173,18 @@ slavery_receiver_list_t *slavery_scan_receivers() {
 			continue;
 		}
 
-		/*struct udev_list_entry *property_list = udev_device_get_sysattr_list_entry(device);
-		struct udev_list_entry *property_entry;
+		/*struct udev_list_entry *property_list =
+		udev_device_get_sysattr_list_entry(device); struct udev_list_entry
+		*property_entry;
 
 		printf("properties:\n");
 
 		udev_list_entry_foreach(property_entry, property_list) {
-		    const char *property_name = udev_list_entry_get_name(property_entry);
-		    const char *property_value = udev_device_get_sysattr_value(device, "driver");
-		    // const char *property_value = udev_list_entry_get_value(property_entry);
+		    const char *property_name =
+		udev_list_entry_get_name(property_entry); const char *property_value =
+		udev_device_get_sysattr_value(device, "driver");
+		    // const char *property_value =
+		udev_list_entry_get_value(property_entry);
 
 		    printf("\t%s: %s\n", property_name, property_value);
 		}*/
@@ -230,7 +233,8 @@ slavery_device_list_t *slavery_receiver_get_devices(slavery_receiver_t *receiver
 
 		slavery_device_print(device);
 
-		/*const char *protocol_version = hidpp_cmd_device_protocol_version(receiver, device_num);
+		/*const char *protocol_version =
+		hidpp_cmd_device_protocol_version(receiver, device_num);
 
 		if (protocol_version == NULL) {
 		    continue;
@@ -246,10 +250,8 @@ slavery_device_list_t *slavery_receiver_get_devices(slavery_receiver_t *receiver
 		char request_buf[] = {0x10, // report
 		                      0x01, // device
 		                      0x00, // feature
-		                      0x10, //(0x00 & 0x0f) << 4 | (0x00 & 0x0f), // function
-		                      0x00,
-		                      0x00,
-		                      0x00};
+		                      0x10, //(0x00 & 0x0f) << 4 | (0x00 & 0x0f), //
+		function 0x00, 0x00, 0x00};
 
 		// get feature ID of 0x0005 = 3
 		// char request_buf[] = {0x10, 0x01, 0x00, 0x01, 0x00, 0x05, 0x00};

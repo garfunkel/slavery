@@ -28,6 +28,9 @@ typedef enum
 	SLAVERY_HIDPP_FUNCTION_FEATURE_SET_GET_FEATURE = 0x01,
 } slavery_hidpp_function_feature_set_t;
 
+enum E
+{ E1 };
+
 typedef enum
 { SLAVERY_HIDPP_FUNCTION_FEATURE_INFO_GET_BASE = 0x00 } slavery_hidpp_function_feature_info_t;
 

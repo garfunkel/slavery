@@ -328,48 +328,29 @@ void slavery_device_list_free(slavery_device_list_t *device_list) {
 
 slavery_device_t *slavery_device_from_receiver(slavery_receiver_t *receiver, const uint8_t device_index) {
 	slavery_device_t *device = malloc(sizeof(slavery_device_t));
-	ssize_t n;
-	uint8_t request_buf[] = {SLAVERY_REPORT_ID_SHORT,
-	                         device_index,
-	                         SLAVERY_HIDPP_FEATURE_ROOT,
-	                         slavery_hidpp_encode_function(SLAVERY_HIDPP_FUNCTION_ROOT_GET_PROTOCOL_VERSION),
-	                         0x00,
-	                         0x00,
-	                         0x00};
-	uint8_t response_buf[20];
-
-	if ((n = write(receiver->fd, request_buf, 7)) != 7) {
-		return NULL;
-	}
-
-	if ((n = read(receiver->fd, response_buf, 20)) != 20) {
-		return NULL;
-	}
-
-	if (response_buf[2] == 0x8f) {
-		return NULL;
-	}
-
 	device->receiver = receiver;
 	device->index = device_index;
-	device->protocol_version = malloc(4);
 
-	uint8_t i = slavery_hidpp_lookup_feature_id(device, SLAVERY_HIDPP_ENTRY_POINT_NAME);
+	if (slavery_hidpp_get_protocol_version(device) == NULL) {
+		free(device);
 
-	printf("i %d\n", i);
+		return NULL;
+	}
 
-	snprintf(device->protocol_version, 4, "%d.%d", response_buf[4], response_buf[5]);
+	slavery_hidpp_get_name(device);
 
 	return device;
 }
 
 void slavery_device_free(slavery_device_t *device) {
+	free(device->protocol_version);
 	free(device->name);
 	free(device);
 }
 
 void slavery_device_print(const slavery_device_t *device) {
 	printf("Device %d:\n", device->index);
+	printf("Name: %s\n", device->name);
 	printf("Protocol Version: %s\n", device->protocol_version);
 	puts("\n");
 }
@@ -398,4 +379,82 @@ uint8_t slavery_hidpp_lookup_feature_id(const slavery_device_t *device, const ui
 	}
 
 	return response_buf[4];
+}
+
+const char *slavery_hidpp_get_protocol_version(slavery_device_t *device) {
+	uint8_t request_buf[] = {SLAVERY_REPORT_ID_SHORT,
+	                         device->index,
+	                         SLAVERY_HIDPP_FEATURE_ROOT,
+	                         slavery_hidpp_encode_function(SLAVERY_HIDPP_FUNCTION_ROOT_GET_PROTOCOL_VERSION),
+	                         0x00,
+	                         0x00,
+	                         0x00};
+	uint8_t response_buf[20];
+
+	if (write(device->receiver->fd, request_buf, 7) != 7) {
+		return NULL;
+	}
+
+	if (read(device->receiver->fd, response_buf, 20) != 20) {
+		return NULL;
+	}
+
+	if (response_buf[2] == 0x8f) {
+		return NULL;
+	}
+
+	device->protocol_version = malloc(4);
+
+	snprintf(device->protocol_version, 4, "%d.%d", response_buf[4], response_buf[5]);
+
+	return device->protocol_version;
+}
+
+const char *slavery_hidpp_get_name(slavery_device_t *device) {
+	uint8_t request_buf[] = {SLAVERY_REPORT_ID_SHORT,
+	                         device->index,
+	                         slavery_hidpp_lookup_feature_id(device, SLAVERY_HIDPP_ENTRY_POINT_NAME),
+	                         slavery_hidpp_encode_function(SLAVERY_HIDPP_FUNCTION_NAME_GET_LENGTH),
+	                         0x00,
+	                         0x00,
+	                         0x00};
+	uint8_t response_buf[20];
+
+	if (write(device->receiver->fd, request_buf, 7) != 7) {
+		return NULL;
+	}
+
+	if (read(device->receiver->fd, response_buf, 20) != 20) {
+		return NULL;
+	}
+
+	if (response_buf[2] == 0x8f) {
+		return NULL;
+	}
+
+	uint8_t name_length = response_buf[4];
+	char *name = malloc(name_length + 1);
+	request_buf[3] = slavery_hidpp_encode_function(SLAVERY_HIDPP_FUNCTION_NAME_GET_NAME);
+
+	do {
+		if (write(device->receiver->fd, request_buf, 7) != 7) {
+			return NULL;
+		}
+
+		if (read(device->receiver->fd, response_buf, 20) != 20) {
+			return NULL;
+		}
+
+		if (response_buf[2] == 0x8f) {
+			return NULL;
+		}
+
+		strncpy(name + request_buf[4], (const char *)response_buf + 4, 16);
+
+		request_buf[4] += 16;
+	} while (request_buf[4] < name_length);
+
+	device->name = name;
+
+	return device->name;
 }

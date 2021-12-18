@@ -81,3 +81,5 @@ struct slavery_device_t {
 };
 
 uint8_t slavery_hidpp_lookup_feature_id(const slavery_device_t *device, const uint16_t number);
+const char *slavery_hidpp_get_protocol_version(slavery_device_t *device);
+const char *slavery_hidpp_get_name(slavery_device_t *device);

@@ -242,7 +242,8 @@ slavery_device_list_t *slavery_receiver_get_devices(slavery_receiver_t *receiver
 	}*/
 
 	// for (uint8_t device_index = 0x40; device_index < 0x46; device_index++) {
-	for (uint8_t device_index = 0x01; device_index < 0x07; device_index++) {
+	for (uint8_t device_index = SLAVERY_HIDPP_DEVICE_INDEX_1; device_index <= SLAVERY_HIDPP_DEVICE_INDEX_6;
+	     device_index++) {
 		slavery_device_t *device = slavery_device_from_receiver(receiver, device_index);
 
 		if (device == NULL) {

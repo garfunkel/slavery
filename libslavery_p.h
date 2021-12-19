@@ -1,5 +1,7 @@
 #pragma once
 
+typedef uint8_t bool;
+
 typedef enum
 {
 	SLAVERY_HIDPP_ENTRY_POINT_ROOT = 0x0000,
@@ -65,6 +67,14 @@ typedef enum
 	SLAVERY_HIDPP_FUNCTION_HOST_SET_HOST = 0x01
 } slavery_hidpp_function_host_t;
 
+typedef enum
+{
+	SLAVERY_HIDPP_BUTTON_TYPE_BUTTON = 0x01,
+	SLAVERY_HIDPP_BUTTON_TYPE_FUNCTION = 0x02,
+	SLAVERY_HIDPP_BUTTON_TYPE_HOTKEY = 0x04,
+	SLAVERY_HIDPP_BUTTON_TYPE_FUNCTION_TOGGLE = 0x08
+} slavery_hidpp_button_type_t;
+
 struct slavery_receiver_t {
 	char *devnode;
 	char *vendor_id;
@@ -78,8 +88,29 @@ struct slavery_device_t {
 	uint8_t index;
 	char *protocol_version;
 	char *name;
+	uint8_t num_buttons;
+	slavery_button_t **buttons;
+};
+
+struct slavery_button_t {
+	slavery_device_t *device;
+	uint8_t index;
+	uint16_t cid;
+	uint16_t task_id;
+	uint8_t flags;
+	bool virtual;
+	bool persistent_divert;
+	bool temporary_divert;
+	bool reprogrammable;
+	slavery_hidpp_button_type_t type;
+	uint8_t function_position;
+	uint8_t group;
+	uint8_t group_remap_mask;
+	bool gesture;
 };
 
 uint8_t slavery_hidpp_lookup_feature_id(const slavery_device_t *device, const uint16_t number);
 const char *slavery_hidpp_get_protocol_version(slavery_device_t *device);
 const char *slavery_hidpp_get_name(slavery_device_t *device);
+uint8_t slavery_hidpp_controls_get_num_buttons(slavery_device_t *device);
+slavery_button_t *slavery_hidpp_controls_get_button(slavery_device_t *device, uint8_t button_index);

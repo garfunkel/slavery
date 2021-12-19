@@ -26,6 +26,8 @@ typedef struct slavery_device_list_t {
 	struct slavery_device_list_t *next;
 } slavery_device_list_t;
 
+typedef struct slavery_button_t slavery_button_t;
+
 slavery_receiver_list_t *slavery_scan_receivers();
 void slavery_receiver_list_free(slavery_receiver_list_t *receiver_list);
 ssize_t slavery_receiver_list_length(const slavery_receiver_list_t *receiver_list);

@@ -1,0 +1,15 @@
+{
+	"thumb": {
+		"press": {
+			"pause_cursor": true
+		},
+		"press_gesture_up": {},
+		"press_gesture_down": {},
+		"press_gesture_left": {},
+		"press_gesture_right": {},
+		"release": {}
+	},
+	"back": {
+		"press": {}
+	}
+}

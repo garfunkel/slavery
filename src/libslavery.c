@@ -6,109 +6,73 @@
 
 #include <fcntl.h>
 #include <libudev.h>
+#include <linux/hidraw.h>
+#include <poll.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 
-const char *SLAVERY_USB_VENDOR_ID_LOGITECH = "046d";
-const char *SLAVERY_USB_PRODUCT_ID_UNIFYING_RECEIVER = "c52b";
-const char *SLAVERY_USB_DRIVER_RECEIVER = "logitech-djreceiver";
+const uint16_t SLAVERY_USB_VENDOR_ID_LOGITECH = 0x046d;
+const uint16_t SLAVERY_USB_PRODUCT_ID_UNIFYING_RECEIVER = 0xc52b;
 
-const uint8_t SLAVERY_HIDPP_PACKET_LENGTH_SHORT = 7;
-const uint8_t SLAVERY_HIDPP_PACKET_LENGTH_LONG = 20;
+const ssize_t SLAVERY_HIDPP_PACKET_LENGTH_SHORT = 7;
+const ssize_t SLAVERY_HIDPP_PACKET_LENGTH_LONG = 20;
 
 const uint8_t SLAVERY_HIDPP_SOFTWARE_ID = 0x01;
 const uint8_t SLAVERY_HIDPP_FEATURE_ROOT = 0x00;
 
 #define slavery_hidpp_encode_function(function) (function << 4) | SLAVERY_HIDPP_SOFTWARE_ID
 
-slavery_receiver_list_t *slavery_receiver_list_new() {
-	slavery_receiver_list_t *receiver_list = malloc(sizeof(slavery_receiver_list_t));
-
-	memset(receiver_list, 0, sizeof(slavery_receiver_list_t));
-
-	return receiver_list;
-}
-
-void slavery_receiver_list_free(slavery_receiver_list_t *receiver_list) {
-	while (receiver_list) {
-		slavery_receiver_free(receiver_list->receiver);
-
-		slavery_receiver_list_t *old_receiver_list = receiver_list;
-		receiver_list = receiver_list->next;
-
-		free(old_receiver_list);
-	}
-}
-
-void slavery_receiver_list_append(slavery_receiver_list_t *receiver_list, slavery_receiver_t *receiver) {
-	if (receiver_list->receiver == NULL) {
-		receiver_list->receiver = receiver;
-		receiver_list->next = NULL;
-
-		return;
+void slavery_receiver_array_free(slavery_receiver_t *receivers[], const ssize_t num_receivers) {
+	for (int i = 0; i < num_receivers; i++) {
+		slavery_receiver_free(receivers[i]);
 	}
 
-	while (receiver_list->next != NULL) {
-		receiver_list = receiver_list->next;
-	}
-
-	receiver_list->next = malloc(sizeof(slavery_receiver_list_t));
-	receiver_list->next->receiver = receiver;
-	receiver_list->next->next = NULL;
+	free(receivers);
 }
 
-ssize_t slavery_receiver_list_length(const slavery_receiver_list_t *receiver_list) {
-	ssize_t length = 0;
+void slavery_receiver_array_print(const slavery_receiver_t *receivers[], const ssize_t num_receivers) {
+	printf("Receivers: %lu\n\n", num_receivers);
 
-	while (receiver_list) {
-		length++;
-		receiver_list = receiver_list->next;
-	}
+	for (int i = 0; i < num_receivers; i++) {
+		printf("Receiver %d:\n", i + 1);
+		slavery_receiver_print(receivers[i]);
 
-	return length;
-}
-
-void slavery_receiver_list_print(const slavery_receiver_list_t *receiver_list) {
-	printf("Receivers: %lu\n\n", slavery_receiver_list_length(receiver_list));
-
-	for (int receiver_number = 1; receiver_list; receiver_list = receiver_list->next, receiver_number++) {
-		printf("Receiver %d:\n", receiver_number);
-		slavery_receiver_print(receiver_list->receiver);
-
-		if (receiver_list->next) {
+		if (i < num_receivers - 1) {
 			puts("\n");
 		}
 	}
 }
 
 void slavery_receiver_free(slavery_receiver_t *receiver) {
+	close(receiver->fd);
+
 	free(receiver->devnode);
-	free(receiver->vendor_id);
-	free(receiver->product_id);
-	free(receiver->driver);
+	free(receiver->name);
+	free(receiver->address);
 	free(receiver);
 }
 
 void slavery_receiver_print(const slavery_receiver_t *receiver) {
 	printf("Devnode: %s\n", receiver->devnode);
-	printf("Vendor ID: %s\n", receiver->vendor_id);
-	printf("Product ID: %s\n", receiver->product_id);
-	printf("Driver: %s\n", receiver->driver);
+	printf("Vendor ID: %04hx\n", receiver->vendor_id);
+	printf("Product ID: %04hx\n", receiver->product_id);
 }
 
-slavery_receiver_list_t *slavery_scan_receivers() {
+int slavery_scan_receivers(slavery_receiver_t **receivers[]) {
 	struct udev *udev;
 	struct udev_enumerate *enumerate;
 	struct udev_list_entry *device_list, *device_entry;
-	slavery_receiver_list_t *receiver_list = NULL;
+	int num_receivers = 0;
+	*receivers = NULL;
 
 	if ((udev = udev_new()) == NULL) {
 		perror("udev_new()");
 
-		return NULL;
+		return -1;
 	}
 
 	if ((enumerate = udev_enumerate_new(udev)) == NULL) {
@@ -116,7 +80,7 @@ slavery_receiver_list_t *slavery_scan_receivers() {
 
 		udev_unref(udev);
 
-		return NULL;
+		return -1;
 	}
 
 	if (udev_enumerate_add_match_subsystem(enumerate, "hidraw") < 0) {
@@ -125,7 +89,7 @@ slavery_receiver_list_t *slavery_scan_receivers() {
 		udev_enumerate_unref(enumerate);
 		udev_unref(udev);
 
-		return NULL;
+		return -1;
 	}
 
 	if (udev_enumerate_scan_devices(enumerate) < 0) {
@@ -134,7 +98,7 @@ slavery_receiver_list_t *slavery_scan_receivers() {
 		udev_enumerate_unref(enumerate);
 		udev_unref(udev);
 
-		return NULL;
+		return -1;
 	}
 
 	device_list = udev_enumerate_get_list_entry(enumerate);
@@ -144,104 +108,120 @@ slavery_receiver_list_t *slavery_scan_receivers() {
 		struct udev_device *device = udev_device_new_from_syspath(udev, sys_path);
 		struct udev_device *parent_device = device;
 		const char *devnode = udev_device_get_devnode(device);
-		const char *vendor_id = NULL;
-		const char *product_id = NULL;
-		const char *driver = NULL;
+		slavery_receiver_t *receiver = slavery_receiver_from_devnode(devnode);
 
-		while (parent_device != NULL) {
-			if (vendor_id == NULL) {
-				vendor_id = udev_device_get_sysattr_value(parent_device, "idVendor");
-			}
-
-			if (product_id == NULL) {
-				product_id = udev_device_get_sysattr_value(parent_device, "idProduct");
-			}
-
-			if (driver == NULL) {
-				driver = udev_device_get_sysattr_value(parent_device, "driver");
-			}
-
-			if (vendor_id && product_id && driver) {
-				break;
-			}
-
-			parent_device = udev_device_get_parent(parent_device);
-		}
-
-		if (strcmp(vendor_id, SLAVERY_USB_VENDOR_ID_LOGITECH) != 0 ||
-		    strcmp(product_id, SLAVERY_USB_PRODUCT_ID_UNIFYING_RECEIVER) != 0 ||
-		    strcmp(driver, SLAVERY_USB_DRIVER_RECEIVER) != 0) {
+		if (receiver == NULL) {
 			udev_device_unref(device);
 
 			continue;
 		}
 
-		/*struct udev_list_entry *property_list =
-		udev_device_get_sysattr_list_entry(device); struct udev_list_entry
-		*property_entry;
+		slavery_receiver_get_report_descriptor(receiver);
 
-		printf("properties:\n");
+		*receivers = realloc(*receivers, sizeof(slavery_receiver_t) * (num_receivers + 1));
+		*receivers[num_receivers++] = receiver;
 
-		udev_list_entry_foreach(property_entry, property_list) {
-		    const char *property_name =
-		udev_list_entry_get_name(property_entry); const char *property_value =
-		udev_device_get_sysattr_value(device, "driver");
-		    // const char *property_value =
-		udev_list_entry_get_value(property_entry);
-
-		    printf("\t%s: %s\n", property_name, property_value);
-		}*/
-
-		slavery_receiver_t *receiver = malloc(sizeof(slavery_receiver_t));
-		receiver->devnode = strdup(devnode);
-		receiver->vendor_id = strdup(vendor_id);
-		receiver->product_id = strdup(product_id);
-		receiver->driver = strdup(driver);
-		receiver->fd = open(receiver->devnode, O_RDWR);
-
-		if (receiver->fd < 0) {
-			perror("open()");
-
-			slavery_receiver_free(receiver);
-
-			udev_device_unref(device);
-			udev_enumerate_unref(enumerate);
-			udev_unref(udev);
-
-			return NULL;
-		}
-
-		if (receiver_list == NULL) {
-			receiver_list = slavery_receiver_list_new();
-		}
-
-		slavery_receiver_list_append(receiver_list, receiver);
 		udev_device_unref(device);
 	}
 
 	udev_enumerate_unref(enumerate);
 	udev_unref(udev);
 
-	return receiver_list;
+	return num_receivers;
 }
 
-slavery_device_list_t *slavery_receiver_get_devices(slavery_receiver_t *receiver) {
-	/*while (TRUE) {
-	    ssize_t n;
-	    char in_buf[256];
+slavery_receiver_t *slavery_receiver_from_devnode(const char *devnode) {
+	slavery_receiver_t *receiver = malloc(sizeof(slavery_receiver_t));
+	receiver->fd = open(devnode, O_RDWR);
+	struct hidraw_devinfo info;
+	int length;
 
-	    n = read(receiver->fd, in_buf, 256);
+	if (receiver->fd < 0) {
+		perror("open()");
 
-	    printf("n: %ld\t", n);
+		free(receiver);
 
-	    for (int i = 0; i < n; i++) {
-	        printf("%hhx ", in_buf[i]);
-	    }
+		return NULL;
+	}
 
-	    puts("");
-	}*/
+	if ((ioctl(receiver->fd, HIDIOCGRAWINFO, &info)) < 0) {
+		perror("ioctl(HIDIOCGRAWINFO)");
 
-	// for (uint8_t device_index = 0x40; device_index < 0x46; device_index++) {
+		close(receiver->fd);
+		free(receiver);
+
+		return NULL;
+	}
+
+	if ((uint16_t)info.vendor != SLAVERY_USB_VENDOR_ID_LOGITECH ||
+	    (uint16_t)info.product != SLAVERY_USB_PRODUCT_ID_UNIFYING_RECEIVER) {
+		close(receiver->fd);
+		free(receiver);
+
+		return NULL;
+	}
+
+	receiver->devnode = strdup(devnode);
+	receiver->vendor_id = info.vendor;
+	receiver->product_id = info.product;
+	receiver->name = malloc(256);
+
+	if ((length = ioctl(receiver->fd, HIDIOCGRAWNAME(256), receiver->name)) < 0) {
+		perror("ioctl(HIDIOCGRAWNAME)");
+
+		close(receiver->fd);
+		free(receiver->name);
+		free(receiver);
+
+		return NULL;
+	}
+
+	receiver->name = realloc(receiver->name, length);
+	receiver->address = malloc(256);
+
+	if ((length = ioctl(receiver->fd, HIDIOCGRAWPHYS(256), receiver->address)) < 0) {
+		perror("ioctl(HIDIOCGRAWPHYS)");
+
+		close(receiver->fd);
+		free(receiver->name);
+		free(receiver->address);
+		free(receiver);
+
+		return NULL;
+	}
+
+	receiver->address = realloc(receiver->address, length);
+
+	return receiver;
+}
+
+int slavery_receiver_get_report_descriptor(slavery_receiver_t *receiver) {
+	struct hidraw_report_descriptor desc;
+
+	if ((ioctl(receiver->fd, HIDIOCGRDESCSIZE, &desc.size)) < 0) {
+		perror("ioctl(HIDIOCGRDESCSIZE)");
+
+		return -1;
+	}
+
+	if ((ioctl(receiver->fd, HIDIOCGRDESC, &desc)) < 0) {
+		perror("ioctl(HIDIOCGRDESC)");
+
+		return -1;
+	}
+
+	/*printf("Report Descriptor:\n");
+	for (unsigned int i = 0; i < desc.size; i++)
+	    printf("%hhx ", desc.value[i]);
+	puts("\n");*/
+
+	return 0;
+}
+
+int slavery_receiver_get_devices(slavery_receiver_t *receiver, slavery_device_t **devices[]) {
+	int num_devices = 0;
+	*devices = NULL;
+
 	for (uint8_t device_index = SLAVERY_HIDPP_DEVICE_INDEX_1; device_index <= SLAVERY_HIDPP_DEVICE_INDEX_6;
 	     device_index++) {
 		slavery_device_t *device = slavery_device_from_receiver(receiver, device_index);
@@ -250,25 +230,43 @@ slavery_device_list_t *slavery_receiver_get_devices(slavery_receiver_t *receiver
 			continue;
 		}
 
+		*devices = realloc(*devices, sizeof(slavery_device_t) * (num_devices + 1));
+		*devices[num_devices++] = device;
+
 		slavery_device_print(device);
 	}
+
+	return num_devices;
+}
+
+slavery_listener_t *slavery_listener_start(slavery_receiver_t *receiver) {
+	/*struct pollfd poll_fd = {
+	    .fd = receiver->fd, .events = POLLIN, .revents = POLLIN | POLLERR | POLLHUP | POLLNVAL};
+	int ret;
+
+	while (TRUE) {
+	    if ((ret = poll(&poll_fd, 1, -1)) > 0) {
+	        int n
+	        printf("HERE\n");
+	    }
+	}*/
 
 	return NULL;
 }
 
-void slavery_device_list_free(slavery_device_list_t *device_list) {
-	while (device_list) {
-		slavery_device_free(device_list->device);
+int slavery_listener_stop(slavery_listener_t *listener) {
+	return 0;
+}
 
-		slavery_device_list_t *old_device_list = device_list;
-		device_list = device_list->next;
-
-		free(old_device_list);
+void slavery_device_array_free(slavery_device_t *devices[], const ssize_t num_devices) {
+	for (ssize_t i = 0; i < num_devices; i++) {
+		slavery_device_free(devices[i]);
 	}
+
+	free(devices);
 }
 
 slavery_device_t *slavery_device_from_receiver(slavery_receiver_t *receiver, const uint8_t device_index) {
-	// TODO: constructor instead as members are uninitialised => error when slavery_device_free/free()
 	slavery_device_t *device = malloc(sizeof(slavery_device_t));
 	device->receiver = receiver;
 	device->index = device_index;
@@ -280,21 +278,33 @@ slavery_device_t *slavery_device_from_receiver(slavery_receiver_t *receiver, con
 	}
 
 	if (slavery_hidpp_get_name(device) == NULL) {
-		slavery_device_free(device);
+		free(device->protocol_version);
+		free(device);
 
 		return NULL;
 	}
 
 	if (slavery_hidpp_controls_get_num_buttons(device) == 0) {
-		slavery_device_free(device);
+		free(device->protocol_version);
+		free(device->name);
+		free(device);
 
 		return NULL;
 	}
 
-	device->buttons = calloc(device->num_buttons, sizeof(slavery_button_t *));
+	device->buttons = malloc(device->num_buttons * sizeof(slavery_button_t *));
 
 	for (uint8_t i = 0; i < device->num_buttons; i++) {
 		device->buttons[i] = slavery_hidpp_controls_get_button(device, i);
+
+		if (device->buttons[i] == NULL) {
+			free(device->buttons);
+			free(device->protocol_version);
+			free(device->name);
+			free(device);
+
+			return NULL;
+		}
 
 		if (device->buttons[i]->cid == 0x00c3) {
 			slavery_hidpp_controls_button_remap(device->buttons[i]);
@@ -316,7 +326,9 @@ void slavery_device_free(slavery_device_t *device) {
 	free(device);
 }
 
-int slavery_device_set_config(slavery_device_t *device, const slavery_config_t *config) { return 0; }
+int slavery_device_set_config(slavery_device_t *device, const slavery_config_t *config) {
+	return 0;
+}
 
 void slavery_device_print(const slavery_device_t *device) {
 	printf("Device %d:\n", device->index);
@@ -410,14 +422,19 @@ const char *slavery_hidpp_get_name(slavery_device_t *device) {
 
 	uint8_t name_length = response_buf[4];
 	char *name = malloc(name_length + 1);
+	char *name_pos = name;
 	request_buf[3] = slavery_hidpp_encode_function(SLAVERY_HIDPP_FUNCTION_NAME_GET_NAME);
 
+	printf("name len: %d\n", name_length + 1);
+
 	do {
-		if (write(device->receiver->fd, request_buf, 7) != 7) {
+		if (write(device->receiver->fd, request_buf, SLAVERY_HIDPP_PACKET_LENGTH_SHORT) !=
+		    SLAVERY_HIDPP_PACKET_LENGTH_SHORT) {
 			return NULL;
 		}
 
-		if (read(device->receiver->fd, response_buf, 20) != 20) {
+		if (read(device->receiver->fd, response_buf, SLAVERY_HIDPP_PACKET_LENGTH_LONG) !=
+		    SLAVERY_HIDPP_PACKET_LENGTH_LONG) {
 			return NULL;
 		}
 
@@ -425,9 +442,14 @@ const char *slavery_hidpp_get_name(slavery_device_t *device) {
 			return NULL;
 		}
 
-		strncpy(name + request_buf[4], (const char *)response_buf + 4, 16);
+		ssize_t num_bytes = (name + name_length + 1) - name_pos;
 
-		request_buf[4] += 16;
+		if (num_bytes > 16) {
+			num_bytes = 16;
+		}
+
+		name_pos = stpncpy(name_pos, (const char *)response_buf + 4, num_bytes);
+		request_buf[4] += num_bytes;
 	} while (request_buf[4] < name_length);
 
 	device->name = name;
@@ -490,6 +512,8 @@ slavery_button_t *slavery_hidpp_controls_get_button(slavery_device_t *device, ui
 	}
 
 	button = malloc(sizeof(slavery_button_t));
+
+	printf("get button info: ");
 
 	for (int i = 0; i < SLAVERY_HIDPP_PACKET_LENGTH_LONG; i++) {
 		printf("%hhx ", response_buf[i]);
@@ -557,6 +581,8 @@ void slavery_hidpp_controls_button_remap(slavery_button_t *button) {
 	    0x00,
 	    0x00};
 	uint8_t response_buf[SLAVERY_HIDPP_PACKET_LENGTH_LONG];
+
+	printf("set button remap: ");
 
 	for (int i = 0; i < SLAVERY_HIDPP_PACKET_LENGTH_LONG; i++) {
 		printf("%hhx ", request_buf[i]);

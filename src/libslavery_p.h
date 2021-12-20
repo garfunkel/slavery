@@ -39,9 +39,6 @@ typedef enum
 	SLAVERY_HIDPP_FUNCTION_FEATURE_SET_GET_FEATURE = 0x01,
 } slavery_hidpp_function_feature_set_t;
 
-enum E
-{ E1 };
-
 typedef enum
 { SLAVERY_HIDPP_FUNCTION_FEATURE_INFO_GET_BASE = 0x00 } slavery_hidpp_function_feature_info_t;
 
@@ -86,10 +83,13 @@ typedef enum
 
 struct slavery_receiver_t {
 	char *devnode;
-	char *vendor_id;
-	char *product_id;
-	char *driver;
+	uint16_t vendor_id;
+	uint16_t product_id;
+	char *name;
+	char *address;
 	int fd;
+	uint8_t num_devices;
+	slavery_device_t **devices;
 };
 
 struct slavery_device_t {
@@ -124,3 +124,6 @@ const char *slavery_hidpp_get_name(slavery_device_t *device);
 uint8_t slavery_hidpp_controls_get_num_buttons(slavery_device_t *device);
 slavery_button_t *slavery_hidpp_controls_get_button(slavery_device_t *device, uint8_t button_index);
 void slavery_hidpp_controls_button_remap(slavery_button_t *button);
+
+slavery_receiver_t *slavery_receiver_from_devnode(const char *devnode);
+int slavery_receiver_get_report_descriptor(slavery_receiver_t *receiver);

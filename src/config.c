@@ -94,7 +94,6 @@ void slavery_config_print(const slavery_config_t *config) {
 
 	for (ssize_t button_index = 0; button_index < config->num_buttons; button_index++) {
 		for (ssize_t action_index = 0; action_index < config->buttons[button_index]->num_actions;
-		     action_index++) {
-		}
+		     action_index++) {}
 	}
 }

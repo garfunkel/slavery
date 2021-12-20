@@ -6,6 +6,8 @@ BinPackArguments: false
 BinPackParameters: false
 BreakBeforeBraces: Attach
 BreakConstructorInitializers: AfterColon
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Empty
 BreakStringLiterals: true
 IncludeBlocks: Regroup
 IndentCaseLabels: true

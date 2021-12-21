@@ -10,17 +10,20 @@ int main() {
 	slavery_receiver_array_print((const slavery_receiver_t **)receivers, num_receivers);
 
 	for (int i = 0; i < num_receivers; i++) {
-		slavery_listener_t *listener = slavery_listener_start(receivers[i]);
 		slavery_device_t **devices;
 		int num_devices = slavery_receiver_get_devices(receivers[i], &devices);
+
+		slavery_receiver_start_listener(receivers[i]);
 
 		for (int i = 0; i < num_devices; i++) {
 			// slavery_device_set_config(device_entry->device, config);
 		}
 
-		getchar();
+		// getchar();
 
-		slavery_listener_stop(listener);
+		sleep(3);
+
+		slavery_receiver_stop_listener(receivers[i]);
 		slavery_device_array_free(devices, num_devices);
 	}
 

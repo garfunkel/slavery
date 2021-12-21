@@ -17,6 +17,8 @@ typedef struct slavery_device_t slavery_device_t;
 typedef struct slavery_button_t slavery_button_t;
 typedef struct slavery_listener_t slavery_listener_t;
 
+extern const ssize_t SLAVERY_LISTENER_DEFAULT_NUM_WORKERS;
+
 int slavery_scan_receivers(slavery_receiver_t **receivers[]);
 
 void slavery_receiver_array_free(slavery_receiver_t *receivers[], const ssize_t num_receivers);
@@ -24,9 +26,8 @@ void slavery_receiver_array_print(const slavery_receiver_t *receivers[], const s
 void slavery_receiver_free(slavery_receiver_t *receiver);
 void slavery_receiver_print(const slavery_receiver_t *receiver);
 int slavery_receiver_get_devices(slavery_receiver_t *receiver, slavery_device_t **devices[]);
-
-slavery_listener_t *slavery_listener_start(slavery_receiver_t *receiver);
-int slavery_listener_stop(slavery_listener_t *listener);
+int slavery_receiver_start_listener(slavery_receiver_t *receiver);
+int slavery_receiver_stop_listener(slavery_receiver_t *receiver);
 
 slavery_config_t *slavery_config_read(const char *path);
 void slavery_config_print(const slavery_config_t *config);

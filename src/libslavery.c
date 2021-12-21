@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <threads.h>
 #include <unistd.h>
 
 const uint16_t SLAVERY_USB_VENDOR_ID_LOGITECH = 0x046d;
@@ -23,8 +24,6 @@ const ssize_t SLAVERY_HIDPP_PACKET_LENGTH_LONG = 20;
 
 const uint8_t SLAVERY_HIDPP_SOFTWARE_ID = 0x01;
 const uint8_t SLAVERY_HIDPP_FEATURE_ROOT = 0x00;
-
-#define slavery_hidpp_encode_function(function) (function << 4) | SLAVERY_HIDPP_SOFTWARE_ID
 
 void slavery_receiver_array_free(slavery_receiver_t *receivers[], const ssize_t num_receivers) {
 	for (int i = 0; i < num_receivers; i++) {
@@ -47,6 +46,7 @@ void slavery_receiver_array_print(const slavery_receiver_t *receivers[], const s
 	}
 }
 
+// TODO: free devices and listeners.
 void slavery_receiver_free(slavery_receiver_t *receiver) {
 	close(receiver->fd);
 
@@ -132,11 +132,10 @@ int slavery_scan_receivers(slavery_receiver_t **receivers[]) {
 
 slavery_receiver_t *slavery_receiver_from_devnode(const char *devnode) {
 	slavery_receiver_t *receiver = malloc(sizeof(slavery_receiver_t));
-	receiver->fd = open(devnode, O_RDWR);
 	struct hidraw_devinfo info;
 	int length;
 
-	if (receiver->fd < 0) {
+	if ((receiver->fd = open(devnode, O_RDWR)) < 0) {
 		perror("open()");
 
 		free(receiver);
@@ -191,6 +190,16 @@ slavery_receiver_t *slavery_receiver_from_devnode(const char *devnode) {
 	}
 
 	receiver->address = realloc(receiver->address, length);
+	receiver->num_devices = 0;
+
+	if (mtx_init(&receiver->listener_lock, mtx_plain) != thrd_success) {
+		close(receiver->fd);
+		free(receiver->name);
+		free(receiver->address);
+		free(receiver);
+
+		return NULL;
+	}
 
 	return receiver;
 }
@@ -239,22 +248,93 @@ int slavery_receiver_get_devices(slavery_receiver_t *receiver, slavery_device_t 
 	return num_devices;
 }
 
-slavery_listener_t *slavery_listener_start(slavery_receiver_t *receiver) {
-	/*struct pollfd poll_fd = {
-	    .fd = receiver->fd, .events = POLLIN, .revents = POLLIN | POLLERR | POLLHUP | POLLNVAL};
-	int ret;
+int slavery_receiver_listen(slavery_receiver_t *receiver) {
+	struct pollfd poll_fds[] = {
+	    {.fd = receiver->listener_fd, .events = POLLIN, .revents = POLLIN | POLLERR | POLLHUP | POLLNVAL},
+	    {.fd = receiver->listener_pipe[0],
+	     .events = POLLIN,
+	     .revents = POLLIN | POLLERR | POLLHUP | POLLNVAL}};
+	int n;
 
 	while (TRUE) {
-	    if ((ret = poll(&poll_fd, 1, -1)) > 0) {
-	        int n
-	        printf("HERE\n");
-	    }
-	}*/
+		if ((n = poll(poll_fds, 2, -1)) > 0) {
+			if (poll_fds[0].revents & POLLHUP) {
+				printf("thread %ld hangup...\n", thrd_current());
 
-	return NULL;
+				break;
+			}
+
+			if (poll_fds[0].revents & POLLERR) {
+				printf("thread %ld error...\n", thrd_current());
+
+				break;
+			}
+
+			if (poll_fds[0].revents & POLLNVAL) {
+				printf("thread %ld nval...\n", thrd_current());
+
+				break;
+			}
+
+			if (poll_fds[0].revents & POLLIN) {
+				char buf[256];
+
+				mtx_lock(&receiver->listener_lock);
+
+				read(receiver->listener_fd, buf, 256);
+
+				mtx_unlock(&receiver->listener_lock);
+
+				if (n < 0) {
+					break;
+				}
+			}
+		}
+	}
+
+	return 0;
 }
 
-int slavery_listener_stop(slavery_listener_t *listener) {
+int slavery_receiver_start_listener(slavery_receiver_t *receiver) {
+	if (pipe(receiver->listener_pipe) < 0) {
+		return -1;
+	}
+
+	if ((receiver->listener_fd = dup(receiver->fd)) < 0) {
+		return -1;
+	}
+
+	if (thrd_create(&receiver->listener_thread, (int (*)(void *))slavery_receiver_listen, receiver) !=
+	    thrd_success) {
+		return -1;
+	}
+
+	return 0;
+}
+
+int slavery_receiver_stop_listener(slavery_receiver_t *receiver) {
+	int ret;
+
+	if (close(receiver->listener_fd) < 0) {
+		return -1;
+	}
+
+	if (write(receiver->listener_pipe[1], (uint8_t[]){1}, sizeof(uint8_t)) < 0) {
+		return -1;
+	}
+
+	if (thrd_join(receiver->listener_thread, &ret) != thrd_success) {
+		return -1;
+	}
+
+	if (close(receiver->listener_pipe[0]) < 0) {
+		return -1;
+	}
+
+	if (close(receiver->listener_pipe[1]) < 0) {
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -348,15 +428,23 @@ uint8_t slavery_hidpp_lookup_feature_id(const slavery_device_t *device, const ui
 	                         0x00};
 	uint8_t response_buf[SLAVERY_HIDPP_PACKET_LENGTH_LONG];
 
+	mtx_lock(&device->receiver->listener_lock);
+
 	if ((n = write(device->receiver->fd, request_buf, SLAVERY_HIDPP_PACKET_LENGTH_SHORT)) !=
 	    SLAVERY_HIDPP_PACKET_LENGTH_SHORT) {
+		mtx_unlock(&device->receiver->listener_lock);
+
 		return 0;
 	}
 
 	if ((n = read(device->receiver->fd, response_buf, SLAVERY_HIDPP_PACKET_LENGTH_LONG)) !=
 	    SLAVERY_HIDPP_PACKET_LENGTH_LONG) {
+		mtx_unlock(&device->receiver->listener_lock);
+
 		return 0;
 	}
+
+	mtx_unlock(&device->receiver->listener_lock);
 
 	if (response_buf[2] == 0x8f) {
 		return 0;
@@ -375,15 +463,23 @@ const char *slavery_hidpp_get_protocol_version(slavery_device_t *device) {
 	                         0x00};
 	uint8_t response_buf[SLAVERY_HIDPP_PACKET_LENGTH_LONG];
 
+	mtx_lock(&device->receiver->listener_lock);
+
 	if (write(device->receiver->fd, request_buf, SLAVERY_HIDPP_PACKET_LENGTH_SHORT) !=
 	    SLAVERY_HIDPP_PACKET_LENGTH_SHORT) {
+		mtx_unlock(&device->receiver->listener_lock);
+
 		return NULL;
 	}
 
 	if (read(device->receiver->fd, response_buf, SLAVERY_HIDPP_PACKET_LENGTH_LONG) !=
 	    SLAVERY_HIDPP_PACKET_LENGTH_LONG) {
+		mtx_unlock(&device->receiver->listener_lock);
+
 		return NULL;
 	}
+
+	mtx_unlock(&device->receiver->listener_lock);
 
 	if (response_buf[2] == 0x8f) {
 		return NULL;
@@ -406,15 +502,23 @@ const char *slavery_hidpp_get_name(slavery_device_t *device) {
 	                         0x00};
 	uint8_t response_buf[SLAVERY_HIDPP_PACKET_LENGTH_LONG];
 
+	mtx_lock(&device->receiver->listener_lock);
+
 	if (write(device->receiver->fd, request_buf, SLAVERY_HIDPP_PACKET_LENGTH_SHORT) !=
 	    SLAVERY_HIDPP_PACKET_LENGTH_SHORT) {
+		mtx_unlock(&device->receiver->listener_lock);
+
 		return NULL;
 	}
 
 	if (read(device->receiver->fd, response_buf, SLAVERY_HIDPP_PACKET_LENGTH_LONG) !=
 	    SLAVERY_HIDPP_PACKET_LENGTH_LONG) {
+		mtx_unlock(&device->receiver->listener_lock);
+
 		return NULL;
 	}
+
+	mtx_unlock(&device->receiver->listener_lock);
 
 	if (response_buf[2] == 0x8f) {
 		return NULL;
@@ -428,15 +532,23 @@ const char *slavery_hidpp_get_name(slavery_device_t *device) {
 	printf("name len: %d\n", name_length + 1);
 
 	do {
+		mtx_lock(&device->receiver->listener_lock);
+
 		if (write(device->receiver->fd, request_buf, SLAVERY_HIDPP_PACKET_LENGTH_SHORT) !=
 		    SLAVERY_HIDPP_PACKET_LENGTH_SHORT) {
+			mtx_unlock(&device->receiver->listener_lock);
+
 			return NULL;
 		}
 
 		if (read(device->receiver->fd, response_buf, SLAVERY_HIDPP_PACKET_LENGTH_LONG) !=
 		    SLAVERY_HIDPP_PACKET_LENGTH_LONG) {
+			mtx_unlock(&device->receiver->listener_lock);
+
 			return NULL;
 		}
+
+		mtx_unlock(&device->receiver->listener_lock);
 
 		if (response_buf[2] == 0x8f) {
 			return NULL;
@@ -467,15 +579,23 @@ uint8_t slavery_hidpp_controls_get_num_buttons(slavery_device_t *device) {
 	                         0x00};
 	uint8_t response_buf[SLAVERY_HIDPP_PACKET_LENGTH_LONG];
 
+	mtx_lock(&device->receiver->listener_lock);
+
 	if (write(device->receiver->fd, request_buf, SLAVERY_HIDPP_PACKET_LENGTH_SHORT) !=
 	    SLAVERY_HIDPP_PACKET_LENGTH_SHORT) {
+		mtx_unlock(&device->receiver->listener_lock);
+
 		return 0;
 	}
 
 	if (read(device->receiver->fd, response_buf, SLAVERY_HIDPP_PACKET_LENGTH_LONG) !=
 	    SLAVERY_HIDPP_PACKET_LENGTH_LONG) {
+		mtx_unlock(&device->receiver->listener_lock);
+
 		return 0;
 	}
+
+	mtx_unlock(&device->receiver->listener_lock);
 
 	if (response_buf[2] == 0x8f) {
 		return 0;
@@ -497,15 +617,23 @@ slavery_button_t *slavery_hidpp_controls_get_button(slavery_device_t *device, ui
 	uint8_t response_buf[SLAVERY_HIDPP_PACKET_LENGTH_LONG];
 	slavery_button_t *button;
 
+	mtx_lock(&device->receiver->listener_lock);
+
 	if (write(device->receiver->fd, request_buf, SLAVERY_HIDPP_PACKET_LENGTH_SHORT) !=
 	    SLAVERY_HIDPP_PACKET_LENGTH_SHORT) {
+		mtx_unlock(&device->receiver->listener_lock);
+
 		return NULL;
 	}
 
 	if (read(device->receiver->fd, response_buf, SLAVERY_HIDPP_PACKET_LENGTH_LONG) !=
 	    SLAVERY_HIDPP_PACKET_LENGTH_LONG) {
+		mtx_unlock(&device->receiver->listener_lock);
+
 		return NULL;
 	}
+
+	mtx_unlock(&device->receiver->listener_lock);
 
 	if (response_buf[2] == 0x8f) {
 		return NULL;
@@ -590,15 +718,23 @@ void slavery_hidpp_controls_button_remap(slavery_button_t *button) {
 
 	puts("");
 
+	mtx_lock(&button->device->receiver->listener_lock);
+
 	if (write(button->device->receiver->fd, request_buf, SLAVERY_HIDPP_PACKET_LENGTH_LONG) !=
 	    SLAVERY_HIDPP_PACKET_LENGTH_LONG) {
+		mtx_unlock(&button->device->receiver->listener_lock);
+
 		return;
 	}
 
 	if (read(button->device->receiver->fd, response_buf, SLAVERY_HIDPP_PACKET_LENGTH_LONG) !=
 	    SLAVERY_HIDPP_PACKET_LENGTH_LONG) {
+		mtx_unlock(&button->device->receiver->listener_lock);
+
 		return;
 	}
+
+	mtx_unlock(&button->device->receiver->listener_lock);
 
 	if (response_buf[2] == 0x8f) {
 		return;

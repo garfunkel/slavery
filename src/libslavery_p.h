@@ -1,5 +1,8 @@
 #pragma once
 
+#include <threads.h>
+#include <unistd.h>
+
 typedef enum
 {
 	SLAVERY_HIDPP_DEVICE_INDEX_1 = 0x01,
@@ -90,6 +93,10 @@ struct slavery_receiver_t {
 	int fd;
 	uint8_t num_devices;
 	slavery_device_t **devices;
+	thrd_t listener_thread;
+	mtx_t listener_lock;
+	int listener_fd;
+	int listener_pipe[2];
 };
 
 struct slavery_device_t {
@@ -127,3 +134,5 @@ void slavery_hidpp_controls_button_remap(slavery_button_t *button);
 
 slavery_receiver_t *slavery_receiver_from_devnode(const char *devnode);
 int slavery_receiver_get_report_descriptor(slavery_receiver_t *receiver);
+
+#define slavery_hidpp_encode_function(function) (function << 4) | SLAVERY_HIDPP_SOFTWARE_ID

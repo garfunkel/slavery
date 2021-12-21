@@ -249,46 +249,38 @@ int slavery_receiver_get_devices(slavery_receiver_t *receiver, slavery_device_t 
 }
 
 int slavery_receiver_listen(slavery_receiver_t *receiver) {
-	struct pollfd poll_fds[] = {
-	    {.fd = receiver->listener_fd, .events = POLLIN, .revents = POLLIN | POLLERR | POLLHUP | POLLNVAL},
-	    {.fd = receiver->listener_pipe[0],
-	     .events = POLLIN,
-	     .revents = POLLIN | POLLERR | POLLHUP | POLLNVAL}};
-	int n;
+	struct pollfd poll_fds[] = {{.fd = receiver->listener_fd, .events = POLLIN},
+	                            {.fd = receiver->listener_pipe[0], .events = POLLIN}};
 
 	while (TRUE) {
-		if ((n = poll(poll_fds, 2, -1)) > 0) {
-			if (poll_fds[0].revents & POLLHUP) {
-				printf("thread %ld hangup...\n", thrd_current());
+		if (poll(poll_fds, 2, -1) <= 0) {
+			return -1;
+		}
 
-				break;
-			}
+		if (poll_fds[1].revents & POLLIN) {
+			return 0;
+		}
 
-			if (poll_fds[0].revents & POLLERR) {
-				printf("thread %ld error...\n", thrd_current());
+		if (poll_fds[0].revents & POLLHUP) {
+			return -1;
+		}
 
-				break;
-			}
+		if (poll_fds[0].revents & POLLERR) {
+			return -1;
+		}
 
-			if (poll_fds[0].revents & POLLNVAL) {
-				printf("thread %ld nval...\n", thrd_current());
+		if (poll_fds[0].revents & POLLNVAL) {
+			return -1;
+		}
 
-				break;
-			}
+		if (poll_fds[0].revents & POLLIN) {
+			char buf[256];
 
-			if (poll_fds[0].revents & POLLIN) {
-				char buf[256];
+			mtx_lock(&receiver->listener_lock);
 
-				mtx_lock(&receiver->listener_lock);
+			read(receiver->listener_fd, buf, 256);
 
-				read(receiver->listener_fd, buf, 256);
-
-				mtx_unlock(&receiver->listener_lock);
-
-				if (n < 0) {
-					break;
-				}
-			}
+			mtx_unlock(&receiver->listener_lock);
 		}
 	}
 

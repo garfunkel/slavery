@@ -5,6 +5,13 @@
 
 typedef enum
 {
+	SLAVERY_REPORT_ID_MSG_SHORT = 0x10,
+	SLAVERY_REPORT_ID_MSG_LONG = 0x11,
+	SLAVERY_REPORT_ID_EVENT = 0x20
+} slavery_report_id_t;
+
+typedef enum
+{
 	SLAVERY_HIDPP_DEVICE_INDEX_1 = 0x01,
 	SLAVERY_HIDPP_DEVICE_INDEX_2 = 0x02,
 	SLAVERY_HIDPP_DEVICE_INDEX_3 = 0x03,
@@ -90,13 +97,11 @@ struct slavery_receiver_t {
 	uint16_t product_id;
 	char *name;
 	char *address;
-	int fd;
 	uint8_t num_devices;
 	slavery_device_t **devices;
 	thrd_t listener_thread;
-	mtx_t listener_lock;
-	int listener_fd;
-	int listener_pipe[2];
+	int fd;
+	int control_pipe[2];
 };
 
 struct slavery_device_t {
@@ -125,6 +130,12 @@ struct slavery_button_t {
 	bool gesture;
 };
 
+typedef struct slavery_event_t {
+	slavery_receiver_t *receiver;
+	size_t size;
+	uint8_t *data;
+} slavery_event_t;
+
 uint8_t slavery_hidpp_lookup_feature_id(const slavery_device_t *device, const uint16_t number);
 const char *slavery_hidpp_get_protocol_version(slavery_device_t *device);
 const char *slavery_hidpp_get_name(slavery_device_t *device);
@@ -134,5 +145,8 @@ void slavery_hidpp_controls_button_remap(slavery_button_t *button);
 
 slavery_receiver_t *slavery_receiver_from_devnode(const char *devnode);
 int slavery_receiver_get_report_descriptor(slavery_receiver_t *receiver);
+void *slavery_receiver_listen(slavery_receiver_t *receiver);
+
+void *slavery_event_dispatch(slavery_event_t *event);
 
 #define slavery_hidpp_encode_function(function) (function << 4) | SLAVERY_HIDPP_SOFTWARE_ID

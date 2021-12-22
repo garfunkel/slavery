@@ -19,11 +19,16 @@ int main() {
 			// slavery_device_set_config(device_entry->device, config);
 		}
 
-		// getchar();
+		while (getchar() != 'q') {
+			continue;
+		}
 
-		sleep(3);
+		printf("trying to stop listener\n");
 
 		slavery_receiver_stop_listener(receivers[i]);
+
+		printf("stopped listener\n");
+
 		slavery_device_array_free(devices, num_devices);
 	}
 

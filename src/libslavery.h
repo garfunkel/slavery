@@ -5,19 +5,11 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-typedef enum
-{
-	SLAVERY_REPORT_ID_SHORT = 0x10,
-	SLAVERY_REPORT_ID_LONG = 0x11
-} slavery_report_id_t;
-
 typedef struct slavery_receiver_t slavery_receiver_t;
 typedef struct slavery_config_t slavery_config_t;
 typedef struct slavery_device_t slavery_device_t;
 typedef struct slavery_button_t slavery_button_t;
 typedef struct slavery_listener_t slavery_listener_t;
-
-extern const ssize_t SLAVERY_LISTENER_DEFAULT_NUM_WORKERS;
 
 int slavery_scan_receivers(slavery_receiver_t **receivers[]);
 

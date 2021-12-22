@@ -13,8 +13,6 @@ int main() {
 		slavery_device_t **devices;
 		int num_devices = slavery_receiver_get_devices(receivers[i], &devices);
 
-		slavery_receiver_start_listener(receivers[i]);
-
 		for (int i = 0; i < num_devices; i++) {
 			// slavery_device_set_config(device_entry->device, config);
 		}
@@ -22,12 +20,6 @@ int main() {
 		while (getchar() != 'q') {
 			continue;
 		}
-
-		printf("trying to stop listener\n");
-
-		slavery_receiver_stop_listener(receivers[i]);
-
-		printf("stopped listener\n");
 
 		slavery_device_array_free(devices, num_devices);
 	}

@@ -15,11 +15,9 @@ int slavery_scan_receivers(slavery_receiver_t **receivers[]);
 
 void slavery_receiver_array_free(slavery_receiver_t *receivers[], const ssize_t num_receivers);
 void slavery_receiver_array_print(const slavery_receiver_t *receivers[], const ssize_t num_receivers);
-void slavery_receiver_free(slavery_receiver_t *receiver);
+int slavery_receiver_free(slavery_receiver_t *receiver);
 void slavery_receiver_print(const slavery_receiver_t *receiver);
 int slavery_receiver_get_devices(slavery_receiver_t *receiver, slavery_device_t **devices[]);
-int slavery_receiver_start_listener(slavery_receiver_t *receiver);
-int slavery_receiver_stop_listener(slavery_receiver_t *receiver);
 
 slavery_config_t *slavery_config_read(const char *path);
 void slavery_config_print(const slavery_config_t *config);

@@ -57,14 +57,27 @@ void slavery_receiver_array_print(const slavery_receiver_t *receivers[], const s
 	}
 }
 
-// TODO: free devices and listeners.
-void slavery_receiver_free(slavery_receiver_t *receiver) {
-	close(receiver->fd);
-
+// TODO: free devices.
+int slavery_receiver_free(slavery_receiver_t *receiver) {
 	free(receiver->devnode);
 	free(receiver->name);
 	free(receiver->address);
+
+	if (close(receiver->fd) < 0) {
+		return -1;
+	}
+
+	if (pthread_kill(receiver->listener_thread, SIGINT) != 0) {
+		return -1;
+	}
+
+	if (pthread_join(receiver->listener_thread, NULL) != 0) {
+		return -1;
+	}
+
 	free(receiver);
+
+	return 0;
 }
 
 void slavery_receiver_print(const slavery_receiver_t *receiver) {
@@ -212,7 +225,8 @@ slavery_receiver_t *slavery_receiver_from_devnode(const char *devnode) {
 		return NULL;
 	}
 
-	if (slavery_receiver_start_listener(receiver) < 0) {
+	if (pthread_create(
+	        &receiver->listener_thread, NULL, (pthread_callback_t)slavery_receiver_listen, receiver) != 0) {
 		close(receiver->control_pipe[0]);
 		close(receiver->control_pipe[1]);
 		close(receiver->fd);
@@ -301,8 +315,8 @@ void *slavery_receiver_listen(slavery_receiver_t *receiver) {
 				pthread_attr_t attr;
 				pthread_attr_init(&attr);
 				pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-
-				pthread_create((pthread_t[]){0}, NULL, (pthread_callback_t)slavery_event_dispatch, event);
+				pthread_create((pthread_t[]){0}, &attr, (pthread_callback_t)slavery_event_dispatch, event);
+				pthread_attr_destroy(&attr);
 
 				break;
 			}
@@ -322,31 +336,6 @@ void *slavery_receiver_listen(slavery_receiver_t *receiver) {
 	return NULL;
 }
 
-int slavery_receiver_start_listener(slavery_receiver_t *receiver) {
-	if (pthread_create(
-	        &receiver->listener_thread, NULL, (pthread_callback_t)slavery_receiver_listen, receiver) != 0) {
-		return -1;
-	}
-
-	return 0;
-}
-
-int slavery_receiver_stop_listener(slavery_receiver_t *receiver) {
-	void *ret;
-
-	close(receiver->fd);
-
-	pthread_kill(receiver->listener_thread, SIGINT);
-
-	if (pthread_join(receiver->listener_thread, &ret) != 0) {
-		return -1;
-	}
-
-	// TODO do something with ret perhaps.
-
-	return 0;
-}
-
 void *slavery_event_dispatch(slavery_event_t *event) {
 	printf("event size: %ld: ", event->size);
 
@@ -355,6 +344,9 @@ void *slavery_event_dispatch(slavery_event_t *event) {
 	}
 
 	puts("");
+
+	free(event->data);
+	free(event);
 
 	return NULL;
 }

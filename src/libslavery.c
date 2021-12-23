@@ -70,15 +70,23 @@ int slavery_receiver_free(slavery_receiver_t *receiver) {
 	free(receiver->name);
 	free(receiver->address);
 
-	if (close(receiver->fd) < 0) {
-		return -1;
-	}
-
 	if (pthread_kill(receiver->listener_thread, SIGINT) != 0) {
 		return -1;
 	}
 
 	if (pthread_join(receiver->listener_thread, NULL) != 0) {
+		return -1;
+	}
+
+	if (close(receiver->fd) < 0) {
+		return -1;
+	}
+
+	if (close(receiver->control_pipe[0]) < 0) {
+		return -1;
+	}
+
+	if (close(receiver->control_pipe[1]) < 0) {
 		return -1;
 	}
 
@@ -335,6 +343,8 @@ int slavery_receiver_get_devices(slavery_receiver_t *receiver) {
 	return num_devices;
 }
 
+// FIXME: hidraw read read/writes full records, my pipe doesn't necessarily
+// FIXME: sending control events to pipe when not actively requested -> pipe grows and isn't read from.
 void *slavery_receiver_listen(slavery_receiver_t *receiver) {
 	struct sigaction sig_action = {.sa_handler = slavery_receiver_listener_signal_handler,
 	                               .sa_flags = SA_RESETHAND};

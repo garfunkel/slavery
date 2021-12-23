@@ -1,15 +1,18 @@
 {
-	"thumb": {
-		"press": {
-			"pause_cursor": true
-		},
-		"press_gesture_up": {},
-		"press_gesture_down": {},
-		"press_gesture_left": {},
-		"press_gesture_right": {},
-		"release": {}
-	},
-	"back": {
-		"press": {}
+	"Zoom in": {
+		"description": "Zoom in",
+		"buttons": [
+			"thumb",
+			"left"
+		],
+		"action": "pressed",
+		"enabled": true,
+		"do_default": true,
+		"do_command": "/bin/nautilus",
+		"do_keyboard": [
+			"alt",
+			"tab"
+		],
+		"do_mouse": null
 	}
 }

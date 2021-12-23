@@ -10,8 +10,7 @@ int main() {
 	slavery_receiver_array_print((const slavery_receiver_t **)receivers, num_receivers);
 
 	for (int i = 0; i < num_receivers; i++) {
-		slavery_device_t **devices;
-		int num_devices = slavery_receiver_get_devices(receivers[i], &devices);
+		int num_devices = slavery_receiver_get_devices(receivers[i]);
 
 		for (int i = 0; i < num_devices; i++) {
 			// slavery_device_set_config(device_entry->device, config);
@@ -20,8 +19,6 @@ int main() {
 		while (getchar() != 'q') {
 			continue;
 		}
-
-		slavery_device_array_free(devices, num_devices);
 	}
 
 	slavery_receiver_array_free(receivers, num_receivers);

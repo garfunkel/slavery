@@ -65,33 +65,45 @@ void slavery_receiver_array_print(const slavery_receiver_t *receivers[], const s
 
 int slavery_receiver_free(slavery_receiver_t *receiver) {
 	log_debug("freeing receiver at %p", receiver);
-
-	free(receiver->devnode);
-	free(receiver->name);
-	free(receiver->address);
+	log_debug("sending SIGINT to listener thread and joining...");
 
 	if (pthread_kill(receiver->listener_thread, SIGINT) != 0) {
+		log_warning_errno(ERROR_OS, "pthread_kill()");
+
 		return -1;
 	}
 
 	if (pthread_join(receiver->listener_thread, NULL) != 0) {
+		log_warning_errno(ERROR_OS, "pthread_join()");
+
 		return -1;
 	}
 
+	log_debug("closing file descriptors");
+
 	if (close(receiver->fd) < 0) {
+		log_warning_errno(ERROR_IO, "close()");
+
 		return -1;
 	}
 
 	if (close(receiver->control_pipe[0]) < 0) {
+		log_warning_errno(ERROR_IO, "close()");
+
 		return -1;
 	}
 
 	if (close(receiver->control_pipe[1]) < 0) {
+		log_warning_errno(ERROR_IO, "close()");
+
 		return -1;
 	}
 
 	slavery_device_array_free(receiver->devices, receiver->num_devices);
 
+	free(receiver->devnode);
+	free(receiver->name);
+	free(receiver->address);
 	free(receiver);
 
 	return 0;
@@ -321,7 +333,7 @@ int slavery_receiver_get_report_descriptor(slavery_receiver_t *receiver) {
 int slavery_receiver_get_devices(slavery_receiver_t *receiver) {
 	log_debug("getting devices connected to receiver %s...", receiver->devnode);
 
-	int num_devices = 0;
+	receiver->num_devices = 0;
 	receiver->devices = NULL;
 
 	for (uint8_t device_index = SLAVERY_HIDPP_DEVICE_INDEX_1; device_index <= SLAVERY_HIDPP_DEVICE_INDEX_6;
@@ -334,13 +346,14 @@ int slavery_receiver_get_devices(slavery_receiver_t *receiver) {
 			continue;
 		}
 
-		receiver->devices = realloc(receiver->devices, sizeof(slavery_device_t) * (num_devices + 1));
-		receiver->devices[num_devices++] = device;
+		receiver->devices =
+		    realloc(receiver->devices, sizeof(slavery_device_t) * (receiver->num_devices + 1));
+		receiver->devices[receiver->num_devices++] = device;
 	}
 
-	log_debug("found %u devices on receiver %s", num_devices, receiver->devnode);
+	log_debug("found %u devices on receiver %s", receiver->num_devices, receiver->devnode);
 
-	return num_devices;
+	return receiver->num_devices;
 }
 
 // FIXME: hidraw read read/writes full records, my pipe doesn't necessarily
@@ -437,6 +450,8 @@ void *slavery_event_dispatch(slavery_event_t *event) {
 }
 
 void slavery_device_array_free(slavery_device_t *devices[], const ssize_t num_devices) {
+	log_debug("freeing device array at %p", devices);
+
 	for (ssize_t i = 0; i < num_devices; i++) {
 		slavery_device_free(devices[i]);
 	}

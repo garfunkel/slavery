@@ -10,6 +10,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+const char *ERROR_LEVEL_DEBUG = "DEBUG";
+const char *ERROR_LEVEL_INFO = "INFO";
+const char *ERROR_LEVEL_WARNING = "WARNING";
+const char *ERROR_LEVEL_ERROR = "ERROR";
+
 const char *bytes_to_hex(const uint8_t bytes[], const size_t num_bytes, char *hex) {
 	if (hex == NULL) {
 		hex = malloc(num_bytes * 5);

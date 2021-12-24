@@ -4,14 +4,31 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/**
+ * Global macros.
+ */
 #define TRUE 1
 #define FALSE 0
 
 #define UNUSED(x) (void)(x)
 
+/**
+ * Useful typecasts.
+ */
 typedef uint8_t bool;
 
+/**
+ * Utility functions.
+ */
 const char *bytes_to_hex(const uint8_t bytes[], const size_t num_bytes, char *hex);
+
+/**
+ * Error handling gubbins.
+ */
+extern const char *ERROR_LEVEL_DEBUG;
+extern const char *ERROR_LEVEL_INFO;
+extern const char *ERROR_LEVEL_WARNING;
+extern const char *ERROR_LEVEL_ERROR;
 
 #define ERROR_TABLE(ERROR)                     \
 	ERROR(ERROR_EVENT, "Event error")          \
@@ -40,21 +57,21 @@ void log_x_error(const char *level,
                  ...);
 
 #ifdef DEBUG
-	#define log_debug(...) log_x("DEBUG", __FILE__, __func__, __LINE__, __VA_ARGS__)
-	#define log_info(...) log_x("INFO", __FILE__, __func__, __LINE, __VA_ARGS__)
+	#define log_debug(...) log_x(ERROR_LEVEL_DEBUG, __FILE__, __func__, __LINE__, __VA_ARGS__)
+	#define log_info(...) log_x(ERROR_LEVEL_INFO, __FILE__, __func__, __LINE, __VA_ARGS__)
 #else
 	#define log_debug(...)
 	#define log_info(...)
 #endif
 
 #define log_warning(error_id, ...) \
-	log_x_error("WARNING", error_id, FALSE, __FILE__, __func__, __LINE__, __VA_ARGS__)
+	log_x_error(ERROR_LEVEL_WARNING, error_id, FALSE, __FILE__, __func__, __LINE__, __VA_ARGS__)
 #define log_warning_errno(error_id, ...) \
-	log_x_error("WARNING", error_id, TRUE, __FILE__, __func__, __LINE__, __VA_ARGS__)
+	log_x_error(ERROR_LEVEL_WARNING, error_id, TRUE, __FILE__, __func__, __LINE__, __VA_ARGS__)
 
-#define log_error(error_id, ...)                                                      \
-	log_x_error("ERROR", error_id, FALSE, __FILE__, __func__, __LINE__, __VA_ARGS__); \
+#define log_error(error_id, ...)                                                                \
+	log_x_error(ERROR_LEVEL_ERROR, error_id, FALSE, __FILE__, __func__, __LINE__, __VA_ARGS__); \
 	exit(EXIT_FAILURE)
-#define log_error_errno(error_id, ...)                                               \
-	log_x_error("ERROR", error_id, TRUE, __FILE__, __func__, __LINE__, __VA_ARGS__); \
+#define log_error_errno(error_id, ...)                                                         \
+	log_x_error(ERROR_LEVEL_ERROR, error_id, TRUE, __FILE__, __func__, __LINE__, __VA_ARGS__); \
 	exit(EXIT_FAILURE)

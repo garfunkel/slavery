@@ -29,27 +29,32 @@ typedef enum
 
 const char *error_id_to_string(const error_id_t error_id);
 
-void log_xf(const char *level, const char *file, const char *func, const int line, const char *fmt, ...);
-void log_xfe(const char *level,
-             const error_id_t error_id,
-             const char *file,
-             const char *func,
-             const int line,
-             const char *fmt,
-             ...);
+void log_x(const char *level, const char *file, const char *func, const int line, const char *fmt, ...);
+void log_x_error(const char *level,
+                 const error_id_t error_id,
+                 const bool with_errno,
+                 const char *file,
+                 const char *func,
+                 const int line,
+                 const char *fmt,
+                 ...);
 
 #ifdef DEBUG
-	#define log_debug(...) log_xf("DEBUG", __FILE__, __func__, __LINE__, __VA_ARGS__)
-	#define log_info(...) log_xf("INFO", __FILE__, __func__, __LINE, __VA_ARGS__)
+	#define log_debug(...) log_x("DEBUG", __FILE__, __func__, __LINE__, __VA_ARGS__)
+	#define log_info(...) log_x("INFO", __FILE__, __func__, __LINE, __VA_ARGS__)
 #else
 	#define log_debug(...)
 	#define log_info(...)
 #endif
 
-#define log_warning(error_id, ...)                                           \
-	log_xfe("WARNING", error_id, __FILE__, __func__, __LINE__, __VA_ARGS__); \
-	exit(EXIT_FAILURE)
+#define log_warning(error_id, ...) \
+	log_x_error("WARNING", error_id, FALSE, __FILE__, __func__, __LINE__, __VA_ARGS__)
+#define log_warning_errno(error_id, ...) \
+	log_x_error("WARNING", error_id, TRUE, __FILE__, __func__, __LINE__, __VA_ARGS__)
 
-#define log_error(error_id, ...)                                           \
-	log_xfe("ERROR", error_id, __FILE__, __func__, __LINE__, __VA_ARGS__); \
+#define log_error(error_id, ...)                                                      \
+	log_x_error("ERROR", error_id, FALSE, __FILE__, __func__, __LINE__, __VA_ARGS__); \
+	exit(EXIT_FAILURE)
+#define log_error_errno(error_id, ...)                                               \
+	log_x_error("ERROR", error_id, TRUE, __FILE__, __func__, __LINE__, __VA_ARGS__); \
 	exit(EXIT_FAILURE)

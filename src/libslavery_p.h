@@ -5,8 +5,8 @@
 
 typedef enum
 {
-	SLAVERY_REPORT_ID_MSG_SHORT = 0x10,
-	SLAVERY_REPORT_ID_MSG_LONG = 0x11,
+	SLAVERY_REPORT_ID_CONTROL_SHORT = 0x10,
+	SLAVERY_REPORT_ID_CONTROL_LONG = 0x11,
 	SLAVERY_REPORT_ID_EVENT = 0x20
 } slavery_report_id_t;
 
@@ -27,7 +27,7 @@ typedef enum
 	SLAVERY_HIDPP_ENTRY_POINT_FEATURE_SET = 0x0001,
 	SLAVERY_HIDPP_ENTRY_POINT_FEATURE_INFO = 0x0002,
 	SLAVERY_HIDPP_ENTRY_POINT_FIRMWARE = 0x0003,
-	SLAVERY_HIDPP_ENTRY_POINT_NAME = 0x0005,
+	SLAVERY_HIDPP_ENTRY_POINT_NAME_TYPE = 0x0005,
 	SLAVERY_HIDPP_ENTRY_POINT_RESET = 0x0020,
 	SLAVERY_HIDPP_ENTRY_POINT_CRYPTO = 0x0021,
 	SLAVERY_HIDPP_ENTRY_POINT_BATTERY = 0x1000,
@@ -60,9 +60,10 @@ typedef enum
 
 typedef enum
 {
-	SLAVERY_HIDPP_FUNCTION_NAME_GET_LENGTH = 0x00,
-	SLAVERY_HIDPP_FUNCTION_NAME_GET_NAME = 0x01
-} slavery_hidpp_function_name_t;
+	SLAVERY_HIDPP_FUNCTION_NAME_TYPE_GET_NAME_LENGTH = 0x00,
+	SLAVERY_HIDPP_FUNCTION_NAME_TYPE_GET_NAME = 0x01,
+	SLAVERY_HIDPP_FUNCTION_NAME_TYPE_GET_TYPE = 0x02
+} slavery_hidpp_function_name_type_t;
 
 typedef enum
 { SLAVERY_HIDPP_FUNCTION_RESET = 0x01 } slavery_hidpp_function_reset_t;
@@ -82,6 +83,18 @@ typedef enum
 	SLAVERY_HIDPP_FUNCTION_HOST_GET_INFO = 0x00,
 	SLAVERY_HIDPP_FUNCTION_HOST_SET_HOST = 0x01
 } slavery_hidpp_function_host_t;
+
+typedef enum
+{
+	SLAVERY_DEVICE_TYPE_KEYBOARD,
+	SLAVERY_DEVICE_TYPE_REMOTE_CONTROL,
+	SLAVERY_DEVICE_TYPE_NUMPAD,
+	SLAVERY_DEVICE_TYPE_MOUSE,
+	SLAVERY_DEVICE_TYPE_TOUCHPAD,
+	SLAVERY_DEVICE_TYPE_TRACKBALL,
+	SLAVERY_DEVICE_TYPE_PRESENTER,
+	SLAVERY_DEVICE_TYPE_RECEIVER
+} slavery_device_type_t;
 
 typedef enum
 {
@@ -108,6 +121,7 @@ struct slavery_device_t {
 	slavery_receiver_t *receiver;
 	uint8_t index;
 	char *protocol_version;
+	slavery_device_type_t type;
 	char *name;
 	uint8_t num_buttons;
 	slavery_button_t **buttons;
@@ -138,6 +152,7 @@ typedef struct slavery_event_t {
 
 uint8_t slavery_hidpp_lookup_feature_id(const slavery_device_t *device, const uint16_t number);
 const char *slavery_hidpp_get_protocol_version(slavery_device_t *device);
+int slavery_hidpp_get_type(slavery_device_t *device);
 const char *slavery_hidpp_get_name(slavery_device_t *device);
 uint8_t slavery_hidpp_controls_get_num_buttons(slavery_device_t *device);
 slavery_button_t *slavery_hidpp_controls_get_button(slavery_device_t *device, uint8_t button_index);

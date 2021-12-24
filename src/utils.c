@@ -2,10 +2,13 @@
 
 #include "utils.h"
 
+#include <errno.h>
 #include <execinfo.h>
+#include <pthread.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 const char *bytes_to_hex(const uint8_t bytes[], const size_t num_bytes, char *hex) {
 	if (hex == NULL) {
@@ -36,34 +39,59 @@ const char *error_id_to_string(const error_id_t error_id) {
 	return error_table[error_id];
 }
 
-void log_xf(const char *level, const char *file, const char *func, const int line, const char *fmt, ...) {
+void log_x(const char *level, const char *file, const char *func, const int line, const char *fmt, ...) {
 	char *msg = NULL;
+	char thread_name[16];
 	va_list args;
 
 	va_start(args, fmt);
 	vasprintf(&msg, fmt, args);
 	va_end(args);
 
-	fprintf(stderr, "%s: %s:%s:%d: %s\n", level, file, func, line, msg);
+	pthread_getname_np(pthread_self(), thread_name, 16);
+
+	fprintf(stderr, "%s: %s:%s:%d: [thread: %s]: %s\n", level, file, func, line, thread_name, msg);
 
 	free(msg);
 }
 
-void log_xfe(const char *level,
-             const error_id_t error_id,
-             const char *file,
-             const char *func,
-             const int line,
-             const char *fmt,
-             ...) {
-	char *msg = NULL;
+void log_x_error(const char *level,
+                 const error_id_t error_id,
+                 const bool with_errno,
+                 const char *file,
+                 const char *func,
+                 const int line,
+                 const char *fmt,
+                 ...) {
+	int local_errno = errno;
+	char *msg;
+	char thread_name[16];
 	va_list args;
 
 	va_start(args, fmt);
 	vasprintf(&msg, fmt, args);
 	va_end(args);
 
-	fprintf(stderr, "%s: %s:%s:%d: %s: %s\n", level, file, func, line, error_id_to_string(error_id), msg);
+	if (with_errno) {
+		char *_msg;
+
+		asprintf(&_msg, "%s: syscall(): \"%s\"", msg, strerror(local_errno));
+		free(msg);
+
+		msg = _msg;
+	}
+
+	pthread_getname_np(pthread_self(), thread_name, 16);
+
+	fprintf(stderr,
+	        "%s: %s:%s:%d: %s: [thread: %s]: %s\n",
+	        level,
+	        file,
+	        func,
+	        line,
+	        error_id_to_string(error_id),
+	        thread_name,
+	        msg);
 
 	free(msg);
 }

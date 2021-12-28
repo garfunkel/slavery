@@ -919,7 +919,7 @@ ssize_t slavery_hidpp_controls_get_num_buttons(slavery_device_t *device) {
 	uint8_t request_data[] = {SLAVERY_REPORT_ID_CONTROL_SHORT,
 	                          device->index,
 	                          slavery_hidpp_feature_id_to_index(device, SLAVERY_HIDPP_FEATURE_ID_CONTROLS_V4),
-	                          slavery_hidpp_encode_function(0),
+	                          slavery_hidpp_encode_function(SLAVERY_HIDPP_FUNCTION_CONTROLS_V4_GET_COUNT),
 	                          0x00,
 	                          0x00,
 	                          0x00};
@@ -945,13 +945,14 @@ ssize_t slavery_hidpp_controls_get_num_buttons(slavery_device_t *device) {
 }
 
 slavery_button_t *slavery_hidpp_controls_get_button(slavery_device_t *device, uint8_t button_index) {
-	uint8_t request_data[] = {SLAVERY_REPORT_ID_CONTROL_SHORT,
-	                          device->index,
-	                          slavery_hidpp_feature_id_to_index(device, SLAVERY_HIDPP_FEATURE_ID_CONTROLS_V4),
-	                          slavery_hidpp_encode_function(1),
-	                          button_index,
-	                          0x00,
-	                          0x00};
+	uint8_t request_data[] = {
+	    SLAVERY_REPORT_ID_CONTROL_SHORT,
+	    device->index,
+	    slavery_hidpp_feature_id_to_index(device, SLAVERY_HIDPP_FEATURE_ID_CONTROLS_V4),
+	    slavery_hidpp_encode_function(SLAVERY_HIDPP_FUNCTION_CONTROLS_V4_GET_BUTTON_INFO),
+	    button_index,
+	    0x00,
+	    0x00};
 	uint8_t response_data[SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG];
 	slavery_button_t *button;
 
@@ -1021,7 +1022,7 @@ void slavery_hidpp_controls_button_remap(slavery_button_t *button) {
 	    SLAVERY_REPORT_ID_CONTROL_LONG,
 	    button->device->index,
 	    slavery_hidpp_feature_id_to_index(button->device, SLAVERY_HIDPP_FEATURE_ID_CONTROLS_V4),
-	    slavery_hidpp_encode_function(3),
+	    slavery_hidpp_encode_function(SLAVERY_HIDPP_FUNCTION_CONTROLS_V4_SET_CID_REPORT_INFO),
 	    button->cid >> 8,
 	    button->cid & 0xff,
 	    / *

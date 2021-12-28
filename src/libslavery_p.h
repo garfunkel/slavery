@@ -1,7 +1,6 @@
 #pragma once
 
-#include "hidpp.h"
-
+#include <string.h>
 #include <threads.h>
 #include <unistd.h>
 
@@ -113,6 +112,14 @@ typedef enum
 	SLAVERY_HIDPP_FUNCTION_HOST_SET_HOST = 0x01
 } slavery_hidpp_function_host_t;
 
+typedef enum
+{
+	SLAVERY_HIDPP_FUNCTION_CONTROLS_V4_GET_COUNT = 0x00,
+	SLAVERY_HIDPP_FUNCTION_CONTROLS_V4_GET_BUTTON_INFO = 0x01,
+	SLAVERY_HIDPP_FUNCTION_CONTROLS_V4_GET_CID_REPORT_INFO = 0x02,
+	SLAVERY_HIDPP_FUNCTION_CONTROLS_V4_SET_CID_REPORT_INFO = 0x03
+} slavery_hidpp_function_controls_v4_t;
+
 #define DEVICE_TYPE_MAP(DEVICE_TYPE)                                  \
 	DEVICE_TYPE(SLAVERY_DEVICE_TYPE_KEYBOARD, "keyboard")             \
 	DEVICE_TYPE(SLAVERY_DEVICE_TYPE_REMOTE_CONTROL, "remote_control") \
@@ -156,6 +163,57 @@ typedef enum
 	SLAVERY_HIDPP_BUTTON_TYPE_HOTKEY = 0x04,
 	SLAVERY_HIDPP_BUTTON_TYPE_FUNCTION_TOGGLE = 0x08
 } slavery_hidpp_button_type_t;
+
+#define BUTTON_MAP(BUTTON)                                        \
+	BUTTON(SLAVERY_HIDPP_BUTTON_LEFT, 0x50, "left")               \
+	BUTTON(SLAVERY_HIDPP_BUTTON_RIGHT, 0x51, "right")             \
+	BUTTON(SLAVERY_HIDPP_BUTTON_MIDDLE, 0x52, "middle")           \
+	BUTTON(SLAVERY_HIDPP_BUTTON_BACK, 0x53, "back")               \
+	BUTTON(SLAVERY_HIDPP_BUTTON_FORWARD, 0x56, "forward")         \
+	BUTTON(SLAVERY_HIDPP_BUTTON_THUMB, 0xc3, "thumb")             \
+	BUTTON(SLAVERY_HIDPP_BUTTON_TOP, 0xc4, "top")                 \
+	BUTTON(SLAVERY_HIDPP_BUTTON_SCROLL_UP, -2, "scroll_up")       \
+	BUTTON(SLAVERY_HIDPP_BUTTON_SCROLL_DOWN, -3, "scroll_down")   \
+	BUTTON(SLAVERY_HIDPP_BUTTON_SCROLL_LEFT, -4, "scroll_left")   \
+	BUTTON(SLAVERY_HIDPP_BUTTON_SCROLL_RIGHT, -5, "scroll_right") \
+	BUTTON_UNKNOWN(SLAVERY_HIDPP_BUTTON_UNKNOWN, -1, "unknown")
+
+typedef enum
+{
+#define BUTTON(button_id, button_value, button_string) button_id = button_value,
+#define BUTTON_UNKNOWN(button_id, button_value, button_string) button_id
+	BUTTON_MAP(BUTTON)
+#undef BUTTON
+#undef BUTTON_UNKNOWN
+} slavery_hidpp_button_t;
+
+#pragma weak slavery_hidpp_button_to_string
+const char *slavery_hidpp_button_to_string(const slavery_hidpp_button_t button) {
+	switch (button) {
+#define BUTTON(button_id, button_value, button_string) \
+	case button_id:                                    \
+		return button_string;
+#define BUTTON_UNKNOWN(button_id, button_value, button_string) \
+	default:                                                   \
+		return button_string;
+		BUTTON_MAP(BUTTON)
+#undef BUTTON
+#undef BUTTON_UNKNOWN
+	}
+}
+
+#pragma weak slavery_hidpp_string_to_button
+slavery_hidpp_button_t slavery_hidpp_string_to_button(const char *button) {
+#define BUTTON(button_id, button_value, button_string) \
+	if (strcmp(button, button_string) == 0) {          \
+		return button_id;                              \
+	}
+#define BUTTON_UNKNOWN(button_id, button_value, button_string) return button_id;
+	BUTTON_MAP(BUTTON)
+#undef BUTTON
+#undef BUTTON_UNKNOWN
+#undef BUTTON_MAP
+}
 
 typedef struct {
 	uint16_t id;

@@ -1,54 +1,33 @@
 #pragma once
 
+#include "errors.h"
+
 #include <alloca.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
 /**
  * Global macros.
  */
-#define TRUE 1
-#define FALSE 0
-
 #define UNUSED(x) (void)(x)
-
-/**
- * Useful typecasts.
- */
-typedef uint8_t bool;
 
 /**
  * Utility functions.
  */
-const char *bytes_to_hex(const uint8_t bytes[], const size_t num_bytes, char *hex);
+const char *bytes_to_hex(const uint8_t bytes[], const size_t num_bytes, char *restrict hex);
 
 /**
- * Error handling gubbins.
+ * Logging gubbins.
  */
 extern const char *ERROR_LEVEL_DEBUG;
 extern const char *ERROR_LEVEL_INFO;
 extern const char *ERROR_LEVEL_WARNING;
 extern const char *ERROR_LEVEL_ERROR;
 
-#define ERROR_TABLE(ERROR)                     \
-	ERROR(ERROR_EVENT, "Event error")          \
-	ERROR(ERROR_CONFIG, "Configuration error") \
-	ERROR(ERROR_IO, "IO error")                \
-	ERROR(ERROR_OS, "OS error")                \
-	ERROR(ERROR_UNKNOWN, "Unknown error")
-
-typedef enum
-{
-#define ERROR_ID(error_id, error_string) error_id,
-	ERROR_TABLE(ERROR_ID)
-#undef ERROR_ID
-} error_id_t;
-
-const char *error_id_to_string(const error_id_t error_id);
-
 void log_x(const char *level, const char *file, const char *func, const int line, const char *fmt, ...);
 void log_x_error(const char *level,
-                 const error_id_t error_id,
+                 const slavery_error_t error,
                  const bool with_errno,
                  const char *file,
                  const char *func,
@@ -64,14 +43,14 @@ void log_x_error(const char *level,
 	#define log_info(...)
 #endif
 
-#define log_warning(error_id, ...) \
-	log_x_error(ERROR_LEVEL_WARNING, error_id, FALSE, __FILE__, __func__, __LINE__, __VA_ARGS__)
-#define log_warning_errno(error_id, ...) \
-	log_x_error(ERROR_LEVEL_WARNING, error_id, TRUE, __FILE__, __func__, __LINE__, __VA_ARGS__)
+#define log_warning(error, ...) \
+	log_x_error(ERROR_LEVEL_WARNING, error, false, __FILE__, __func__, __LINE__, __VA_ARGS__)
+#define log_warning_errno(error, ...) \
+	log_x_error(ERROR_LEVEL_WARNING, error, true, __FILE__, __func__, __LINE__, __VA_ARGS__)
 
-#define log_error(error_id, ...)                                                                \
-	log_x_error(ERROR_LEVEL_ERROR, error_id, FALSE, __FILE__, __func__, __LINE__, __VA_ARGS__); \
+#define log_error(error, ...)                                                                \
+	log_x_error(ERROR_LEVEL_ERROR, error, false, __FILE__, __func__, __LINE__, __VA_ARGS__); \
 	exit(EXIT_FAILURE)
-#define log_error_errno(error_id, ...)                                                         \
-	log_x_error(ERROR_LEVEL_ERROR, error_id, TRUE, __FILE__, __func__, __LINE__, __VA_ARGS__); \
+#define log_error_errno(error, ...)                                                         \
+	log_x_error(ERROR_LEVEL_ERROR, error, true, __FILE__, __func__, __LINE__, __VA_ARGS__); \
 	exit(EXIT_FAILURE)

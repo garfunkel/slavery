@@ -2,6 +2,7 @@
 
 #include "libslavery.h"
 
+#include "hidpp.h"
 #include "libslavery_p.h"
 
 #include <errno.h>
@@ -28,7 +29,6 @@ const size_t SLAVERY_HIDPP_PACKET_LENGTH_EVENT = 15;
 const size_t SLAVERY_HIDPP_PACKET_LENGTH_MAX = 32;
 
 const uint8_t SLAVERY_HIDPP_SOFTWARE_ID = 0x01;
-const uint8_t SLAVERY_HIDPP_FEATURE_ROOT = 0x00;
 
 static void slavery_receiver_listener_signal_handler(int signum) {
 	log_debug("process received signal SIG%s, stopping listener...", sigabbrev_np(signum));
@@ -68,33 +68,33 @@ int slavery_receiver_free(slavery_receiver_t *receiver) {
 	log_debug("sending SIGINT to listener thread and joining...");
 
 	if (pthread_kill(receiver->listener_thread, SIGINT) != 0) {
-		log_warning_errno(ERROR_OS, "pthread_kill()");
+		log_warning_errno(SLAVERY_ERROR_OS, "pthread_kill()");
 
 		return -1;
 	}
 
 	if (pthread_join(receiver->listener_thread, NULL) != 0) {
-		log_warning_errno(ERROR_OS, "pthread_join()");
+		log_warning_errno(SLAVERY_ERROR_OS, "pthread_join()");
 
 		return -1;
 	}
 
 	log_debug("closing file descriptors");
 
-	if (close(receiver->fd) < 0) {
-		log_warning_errno(ERROR_IO, "close()");
-
-		return -1;
-	}
-
 	if (close(receiver->control_pipe[0]) < 0) {
-		log_warning_errno(ERROR_IO, "close()");
+		log_warning_errno(SLAVERY_ERROR_IO, "close()");
 
 		return -1;
 	}
 
 	if (close(receiver->control_pipe[1]) < 0) {
-		log_warning_errno(ERROR_IO, "close()");
+		log_warning_errno(SLAVERY_ERROR_IO, "close()");
+
+		return -1;
+	}
+
+	if (close(receiver->fd) < 0) {
+		log_warning_errno(SLAVERY_ERROR_IO, "close()");
 
 		return -1;
 	}
@@ -125,13 +125,13 @@ int slavery_scan_receivers(slavery_receiver_t **receivers[]) {
 	*receivers = NULL;
 
 	if ((udev = udev_new()) == NULL) {
-		log_warning(ERROR_IO, "udev_new() failed");
+		log_warning(SLAVERY_ERROR_IO, "udev_new() failed");
 
 		return -1;
 	}
 
 	if ((enumerate = udev_enumerate_new(udev)) == NULL) {
-		log_warning(ERROR_IO, "udev_enumerate_new() failed");
+		log_warning(SLAVERY_ERROR_IO, "udev_enumerate_new() failed");
 
 		udev_unref(udev);
 
@@ -139,7 +139,7 @@ int slavery_scan_receivers(slavery_receiver_t **receivers[]) {
 	}
 
 	if (udev_enumerate_add_match_subsystem(enumerate, "hidraw") < 0) {
-		log_warning(ERROR_IO, "udev_enumerate_add_match_subsystem() failed");
+		log_warning(SLAVERY_ERROR_IO, "udev_enumerate_add_match_subsystem() failed");
 
 		udev_enumerate_unref(enumerate);
 		udev_unref(udev);
@@ -148,7 +148,7 @@ int slavery_scan_receivers(slavery_receiver_t **receivers[]) {
 	}
 
 	if (udev_enumerate_scan_devices(enumerate) < 0) {
-		log_warning(ERROR_IO, "udev_enumerate_scan_devices() failed");
+		log_warning(SLAVERY_ERROR_IO, "udev_enumerate_scan_devices() failed");
 
 		udev_enumerate_unref(enumerate);
 		udev_unref(udev);
@@ -161,7 +161,6 @@ int slavery_scan_receivers(slavery_receiver_t **receivers[]) {
 	udev_list_entry_foreach(device_entry, device_list) {
 		const char *sys_path = udev_list_entry_get_name(device_entry);
 		struct udev_device *device = udev_device_new_from_syspath(udev, sys_path);
-		struct udev_device *parent_device = device;
 		const char *devnode = udev_device_get_devnode(device);
 
 		log_debug("found devnode on %s, checking if it is a receiver", devnode);
@@ -177,7 +176,7 @@ int slavery_scan_receivers(slavery_receiver_t **receivers[]) {
 		}
 
 		if (slavery_receiver_get_report_descriptor(receiver) < 0) {
-			log_warning(ERROR_IO, "failed to get report descriptor");
+			log_warning(SLAVERY_ERROR_IO, "failed to get report descriptor");
 
 			slavery_receiver_free(receiver);
 			udev_device_unref(device);
@@ -207,7 +206,7 @@ slavery_receiver_t *slavery_receiver_from_devnode(const char *devnode) {
 	int length;
 
 	if ((receiver->fd = open(devnode, O_RDWR)) < 0) {
-		log_warning_errno(ERROR_IO, "open() failed");
+		log_warning_errno(SLAVERY_ERROR_IO, "open() failed");
 
 		free(receiver);
 
@@ -215,7 +214,7 @@ slavery_receiver_t *slavery_receiver_from_devnode(const char *devnode) {
 	}
 
 	if ((ioctl(receiver->fd, HIDIOCGRAWINFO, &info)) < 0) {
-		log_warning(ERROR_IO, "ioctl(HIDIOCGRAWINFO) failed");
+		log_warning(SLAVERY_ERROR_IO, "ioctl(HIDIOCGRAWINFO) failed");
 
 		close(receiver->fd);
 		free(receiver);
@@ -239,7 +238,7 @@ slavery_receiver_t *slavery_receiver_from_devnode(const char *devnode) {
 	receiver->name = malloc(256);
 
 	if ((length = ioctl(receiver->fd, HIDIOCGRAWNAME(256), receiver->name)) < 0) {
-		log_warning(ERROR_IO, "ioctl(HIDIOCGRAWNAME) failed");
+		log_warning(SLAVERY_ERROR_IO, "ioctl(HIDIOCGRAWNAME) failed");
 
 		close(receiver->fd);
 		free(receiver->name);
@@ -252,7 +251,7 @@ slavery_receiver_t *slavery_receiver_from_devnode(const char *devnode) {
 	receiver->address = malloc(256);
 
 	if ((length = ioctl(receiver->fd, HIDIOCGRAWPHYS(256), receiver->address)) < 0) {
-		log_warning(ERROR_IO, "ioctl(HIDIOCGRAWPHYS) failed");
+		log_warning(SLAVERY_ERROR_IO, "ioctl(HIDIOCGRAWPHYS) failed");
 
 		close(receiver->fd);
 		free(receiver->name);
@@ -266,8 +265,8 @@ slavery_receiver_t *slavery_receiver_from_devnode(const char *devnode) {
 	receiver->num_devices = 0;
 	receiver->devices = NULL;
 
-	if (pipe(receiver->control_pipe) < 0) {
-		log_warning(ERROR_IO, "pipe() failed");
+	if (pipe2(receiver->control_pipe, O_DIRECT) < 0) {
+		log_warning(SLAVERY_ERROR_IO, "pipe2() failed");
 
 		close(receiver->fd);
 		free(receiver->name);
@@ -282,7 +281,7 @@ slavery_receiver_t *slavery_receiver_from_devnode(const char *devnode) {
 
 	if (pthread_create(
 	        &receiver->listener_thread, NULL, (pthread_callback_t)slavery_receiver_listen, receiver) != 0) {
-		log_warning(ERROR_OS, "pthread_create() failed");
+		log_warning(SLAVERY_ERROR_OS, "pthread_create() failed");
 
 		close(receiver->control_pipe[0]);
 		close(receiver->control_pipe[1]);
@@ -295,7 +294,7 @@ slavery_receiver_t *slavery_receiver_from_devnode(const char *devnode) {
 	}
 
 	if (pthread_setname_np(receiver->listener_thread, "listener") != 0) {
-		log_warning(ERROR_OS, "pthread_setname_np() failed");
+		log_warning(SLAVERY_ERROR_OS, "pthread_setname_np() failed");
 	}
 
 	log_debug("receiver listener thread started");
@@ -309,13 +308,13 @@ int slavery_receiver_get_report_descriptor(slavery_receiver_t *receiver) {
 	struct hidraw_report_descriptor desc;
 
 	if ((ioctl(receiver->fd, HIDIOCGRDESCSIZE, &desc.size)) < 0) {
-		log_warning(ERROR_IO, "ioctl(HIDIOCGRDESCSIZE) failed");
+		log_warning(SLAVERY_ERROR_IO, "ioctl(HIDIOCGRDESCSIZE) failed");
 
 		return -1;
 	}
 
 	if ((ioctl(receiver->fd, HIDIOCGRDESC, &desc)) < 0) {
-		log_warning(ERROR_IO, "ioctl(HIDIOCGRDESC) failed");
+		log_warning(SLAVERY_ERROR_IO, "ioctl(HIDIOCGRDESC) failed");
 
 		return -1;
 	}
@@ -365,52 +364,72 @@ void *slavery_receiver_listen(slavery_receiver_t *receiver) {
 
 	log_debug("started");
 
-	while (TRUE) {
-		slavery_event_t *event = malloc(sizeof(slavery_event_t));
-		event->data = malloc(SLAVERY_HIDPP_PACKET_LENGTH_MAX);
-		ssize_t event_size = read(receiver->fd, event->data, SLAVERY_HIDPP_PACKET_LENGTH_MAX);
+	while (true) {
+		uint8_t *response_data = malloc(SLAVERY_HIDPP_PACKET_LENGTH_MAX);
+		ssize_t response_size = read(receiver->fd, response_data, SLAVERY_HIDPP_PACKET_LENGTH_MAX);
 
-		if (event_size < 0) {
+		if (response_size < 0) {
 			if (errno == EINTR) {
 				log_debug("read() interrupted, exiting...");
 			}
 
-			free(event->data);
-			free(event);
+			free(response_data);
 
 			return NULL;
 		}
 
-		event->size = event_size;
-		event->data = realloc(event->data, event->size);
+		// event->size = event_size;
+		// event->data = realloc(event->data, event->size);
 
-		switch (event->data[0]) {
+		switch (response_data[0]) {
 			case SLAVERY_REPORT_ID_EVENT: {
 #ifdef DEBUG
-				char hex[event->size * 5];
+				char hex[response_size * 5];
 
 				log_debug("starting worker to handle event of size %ld: %s",
-				          event->size,
-				          bytes_to_hex(event->data, event->size, hex));
+				          response_size,
+				          bytes_to_hex(response_data, response_size, hex));
 #endif
 
 				pthread_attr_t attr;
 
 				if (pthread_attr_init(&attr) != 0) {
-					log_warning(ERROR_OS, "pthread_attr_init() failed");
+					log_warning(SLAVERY_ERROR_OS, "pthread_attr_init() failed");
+
+					free(response_data);
+
+					return NULL;
 				}
 
 				if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0) {
-					log_warning(ERROR_OS, "pthread_attr_setdetachstate() failed");
+					log_warning(SLAVERY_ERROR_OS, "pthread_attr_setdetachstate() failed");
+
+					free(response_data);
+
+					return NULL;
 				}
+
+				slavery_event_t *event = malloc(sizeof(slavery_event_t));
+				event->response_size = response_size;
+				event->response_data = response_data;
 
 				if (pthread_create(
 				        (pthread_t[]){0}, &attr, (pthread_callback_t)slavery_event_dispatch, event) != 0) {
-					log_warning(ERROR_OS, "pthread_create() failed");
+					log_warning(SLAVERY_ERROR_OS, "pthread_create() failed");
+
+					free(response_data);
+					free(event);
+
+					return NULL;
 				}
 
 				if (pthread_attr_destroy(&attr) != 0) {
-					log_warning(ERROR_OS, "pthread_attr_destroy() failed");
+					log_warning(SLAVERY_ERROR_OS, "pthread_attr_destroy() failed");
+
+					free(response_data);
+					free(event);
+
+					return NULL;
 				}
 
 				break;
@@ -418,23 +437,14 @@ void *slavery_receiver_listen(slavery_receiver_t *receiver) {
 
 			default: {
 #ifdef DEBUG
-				char hex[event->size * 5];
+				char hex[response_size * 5];
 
 				log_debug("redirecting control event of size %ld: %s",
-				          event->size,
-				          bytes_to_hex(event->data, event->size, hex));
+				          response_size,
+				          bytes_to_hex(response_data, response_size, hex));
 #endif
 
-				event_size = write(receiver->control_pipe[1], event->data, event->size);
-
-				free(event->data);
-				free(event);
-
-				if (event_size < 0) {
-					log_warning(ERROR_IO, "write() failed");
-
-					return NULL;
-				}
+				slavery_receiver_control_write_response(receiver, response_data, response_size);
 			}
 		}
 	}
@@ -442,8 +452,52 @@ void *slavery_receiver_listen(slavery_receiver_t *receiver) {
 	return NULL;
 }
 
+// FIXME add flow control.
+int slavery_receiver_control_read_response(slavery_receiver_t *receiver,
+                                           uint8_t response_data[],
+                                           ssize_t response_size) {
+	if (read(receiver->control_pipe[0], response_data, response_size) < 0) {
+		log_warning(SLAVERY_ERROR_IO, "failed to read control event response");
+
+		return -1;
+	}
+
+	if (response_data[2] == SLAVERY_HIDPP_FEATURE_INDEX_ERROR) {
+		if (response_data[5] == SLAVERY_HIDPP_ERROR_RESOURCE) {
+			log_debug("received resource error, device likely doesn't exist");
+		} else {
+			log_warning(SLAVERY_ERROR_IO, "received error code");
+		}
+
+		return -1;
+	}
+
+#ifdef DEBUG
+	char hex[SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG * 5];
+
+	log_debug("received control event of size %u: %s",
+	          SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG,
+	          bytes_to_hex(response_data, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG, hex));
+#endif
+
+	return 0;
+}
+
+// FIXME add flow control.
+int slavery_receiver_control_write_response(slavery_receiver_t *receiver,
+                                            uint8_t response_data[],
+                                            ssize_t response_size) {
+	if (write(receiver->control_pipe[1], response_data, response_size) < 0) {
+		log_warning_errno(SLAVERY_ERROR_IO, "failed to write control event response");
+
+		return -1;
+	}
+
+	return 0;
+}
+
 void *slavery_event_dispatch(slavery_event_t *event) {
-	free(event->data);
+	// free(event->data);
 	free(event);
 
 	return NULL;
@@ -466,6 +520,14 @@ slavery_device_t *slavery_device_from_receiver(slavery_receiver_t *receiver, con
 	device->receiver = receiver;
 	device->index = device_index;
 
+	if (slavery_hidpp_get_features(device) < 0) {
+		log_debug("failed to get device features for %s:%u", receiver->devnode, device_index);
+
+		free(device);
+
+		return NULL;
+	}
+
 	if (slavery_hidpp_get_protocol_version(device) == NULL) {
 		log_debug("failed to get device protocol for %s:%u", receiver->devnode, device_index);
 
@@ -474,7 +536,7 @@ slavery_device_t *slavery_device_from_receiver(slavery_receiver_t *receiver, con
 		return NULL;
 	}
 
-	if (slavery_hidpp_get_type(device) < 0) {
+	if (slavery_hidpp_get_type(device) == SLAVERY_DEVICE_TYPE_UNKNOWN) {
 		log_debug("failed to get device type for %s:%u", receiver->devnode, device_index);
 
 		free(device->protocol_version);
@@ -515,7 +577,7 @@ slavery_device_t *slavery_device_from_receiver(slavery_receiver_t *receiver, con
 
 	device->buttons = malloc(device->num_buttons * sizeof(slavery_button_t *));
 
-	for (uint8_t i = 0; i < device->num_buttons; i++) {
+	for (size_t i = 0; i < device->num_buttons; i++) {
 		device->buttons[i] = slavery_hidpp_controls_get_button(device, i);
 
 		if (device->buttons[i] == NULL) {
@@ -553,6 +615,9 @@ void slavery_device_free(slavery_device_t *device) {
 }
 
 int slavery_device_set_config(slavery_device_t *device, const slavery_config_t *config) {
+	UNUSED(device);
+	UNUSED(config);
+
 	return 0;
 }
 
@@ -563,173 +628,274 @@ void slavery_device_print(const slavery_device_t *device) {
 	puts("\n");
 }
 
-uint8_t slavery_hidpp_lookup_feature_id(const slavery_device_t *device, const uint16_t number) {
-	ssize_t n;
-	uint8_t request_buf[] = {SLAVERY_REPORT_ID_CONTROL_SHORT,
-	                         device->index,
-	                         SLAVERY_HIDPP_FUNCTION_ROOT_GET_FEATURE,
-	                         slavery_hidpp_encode_function(SLAVERY_HIDPP_FUNCTION_ROOT_GET_FEATURE),
-	                         number >> 8,
-	                         number & 0xff,
-	                         0x00};
-	uint8_t response_buf[SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG];
+slavery_feature_t *slavery_hidpp_get_feature(slavery_device_t *device,
+                                             slavery_hidpp_feature_id_t feature_id) {
+	log_debug("getting feature information for feature ID %u", feature_id);
 
-	if ((n = write(device->receiver->fd, request_buf, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT)) !=
+	uint8_t request_data[] = {SLAVERY_REPORT_ID_CONTROL_SHORT,
+	                          device->index,
+	                          SLAVERY_HIDPP_FEATURE_INDEX_ROOT,
+	                          slavery_hidpp_encode_function(SLAVERY_HIDPP_FUNCTION_ROOT_GET_FEATURE_INDEX),
+	                          feature_id >> 8,
+	                          feature_id & 0xff,
+	                          0x00};
+	uint8_t response_data[SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG];
+
+	if (write(device->receiver->fd, request_data, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT) !=
 	    (ssize_t)SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT) {
-		return 0;
+		log_warning_errno(SLAVERY_ERROR_IO, "failed to request feature");
+
+		return NULL;
 	}
 
-	if ((n = read(
-	         device->receiver->control_pipe[0], response_buf, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG)) !=
-	    (ssize_t)SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) {
-		return 0;
+	if (slavery_receiver_control_read_response(
+	        device->receiver, response_data, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) < 0) {
+		log_warning(SLAVERY_ERROR_IO, "failed to read control event response from device");
+
+		return NULL;
 	}
 
-	if (response_buf[2] == 0x8f) {
-		return 0;
+	if (response_data[4] == 0x00 && response_data[5] == 0x00 && response_data[6] == 0x00) {
+		log_debug("feature doesn't exist");
+
+		return NULL;
 	}
 
-	return response_buf[4];
+	slavery_feature_t *feature = malloc(sizeof(slavery_feature_t));
+	feature->id = feature_id;
+	feature->index = response_data[4];
+	feature->flags = response_data[5];
+	feature->version = response_data[6];
+
+	log_debug("received information for feature ID %u", feature_id);
+
+	return feature;
+}
+
+ssize_t slavery_hidpp_get_features(slavery_device_t *device) {
+	log_debug("getting features for device %s:%u...", device->receiver->devnode, device->index);
+	log_debug("checking if device exists");
+
+	device->features = NULL;
+	device->num_features = 0;
+	slavery_feature_t *feature;
+
+	// Get root feature, which we already know the details of, but lets do it for completeness.
+	if ((feature = slavery_hidpp_get_feature(device, SLAVERY_HIDPP_FEATURE_ID_ROOT)) == NULL) {
+		log_debug("couldn't get root feature for device %s:%u", device->receiver->devnode, device->index);
+
+		return -1;
+	}
+
+	device->features = realloc(device->features, sizeof(slavery_feature_t *) * (device->num_features + 1));
+	device->features[device->num_features++] = feature;
+
+	// Get feature set feature.
+	if ((feature = slavery_hidpp_get_feature(device, SLAVERY_HIDPP_FEATURE_ID_FEATURE_SET)) == NULL) {
+		log_debug(
+		    "couldn't get feature set feature for device %s:%u", device->receiver->devnode, device->index);
+	} else {
+		device->features =
+		    realloc(device->features, sizeof(slavery_feature_t *) * (device->num_features + 1));
+		device->features[device->num_features++] = feature;
+	}
+
+	// Get firmware feature.
+	if ((feature = slavery_hidpp_get_feature(device, SLAVERY_HIDPP_FEATURE_ID_FIRMWARE)) == NULL) {
+		log_debug("couldn't get firmware feature for device %s:%u", device->receiver->devnode, device->index);
+	} else {
+		device->features =
+		    realloc(device->features, sizeof(slavery_feature_t *) * (device->num_features + 1));
+		device->features[device->num_features++] = feature;
+	}
+
+	// Get name feature.
+	if ((feature = slavery_hidpp_get_feature(device, SLAVERY_HIDPP_FEATURE_ID_NAME_TYPE)) == NULL) {
+		log_debug("couldn't get name feature for device %s:%u", device->receiver->devnode, device->index);
+	} else {
+		device->features =
+		    realloc(device->features, sizeof(slavery_feature_t *) * (device->num_features + 1));
+		device->features[device->num_features++] = feature;
+	}
+
+	// Get reset feature.
+	if ((feature = slavery_hidpp_get_feature(device, SLAVERY_HIDPP_FEATURE_ID_RESET)) == NULL) {
+		log_debug("couldn't get reset feature for device %s:%u", device->receiver->devnode, device->index);
+	} else {
+		device->features =
+		    realloc(device->features, sizeof(slavery_feature_t *) * (device->num_features + 1));
+		device->features[device->num_features++] = feature;
+	}
+
+	// Get crypto feature.
+	if ((feature = slavery_hidpp_get_feature(device, SLAVERY_HIDPP_FEATURE_ID_CRYPTO)) == NULL) {
+		log_debug("couldn't get crypto feature for device %s:%u", device->receiver->devnode, device->index);
+	} else {
+		device->features =
+		    realloc(device->features, sizeof(slavery_feature_t *) * (device->num_features + 1));
+		device->features[device->num_features++] = feature;
+	}
+
+	// Get battery feature.
+	if ((feature = slavery_hidpp_get_feature(device, SLAVERY_HIDPP_FEATURE_ID_BATTERY)) == NULL) {
+		log_debug("couldn't get battery feature for device %s:%u", device->receiver->devnode, device->index);
+	} else {
+		device->features =
+		    realloc(device->features, sizeof(slavery_feature_t *) * (device->num_features + 1));
+		device->features[device->num_features++] = feature;
+	}
+
+	// Get host feature.
+	if ((feature = slavery_hidpp_get_feature(device, SLAVERY_HIDPP_FEATURE_ID_HOST)) == NULL) {
+		log_debug("couldn't get host feature for device %s:%u", device->receiver->devnode, device->index);
+	} else {
+		device->features =
+		    realloc(device->features, sizeof(slavery_feature_t *) * (device->num_features + 1));
+		device->features[device->num_features++] = feature;
+	}
+
+	// Get controls v4 feature.
+	if ((feature = slavery_hidpp_get_feature(device, SLAVERY_HIDPP_FEATURE_ID_CONTROLS_V4)) == NULL) {
+		log_debug("couldn't get controls v4 set feature for device %s:%u",
+		          device->receiver->devnode,
+		          device->index);
+	} else {
+		device->features =
+		    realloc(device->features, sizeof(slavery_feature_t *) * (device->num_features + 1));
+		device->features[device->num_features++] = feature;
+	}
+
+	log_debug("found %d features for device %s:%u...",
+	          device->num_features,
+	          device->receiver->devnode,
+	          device->index);
+
+	return device->num_features;
+}
+
+ssize_t slavery_hidpp_feature_id_to_index(slavery_device_t *device, const uint16_t id) {
+	for (uint8_t i = 0; i < device->num_features; i++) {
+		if (device->features[i]->id == id) {
+			return device->features[i]->index;
+		}
+	}
+
+	return -1;
 }
 
 const char *slavery_hidpp_get_protocol_version(slavery_device_t *device) {
-	log_debug("getting protocol version for device: %s:%u...", device->receiver->devnode, device->index);
+	log_debug("getting protocol version for device %s:%u...", device->receiver->devnode, device->index);
 
-	uint8_t request_buf[] = {SLAVERY_REPORT_ID_CONTROL_SHORT,
-	                         device->index,
-	                         SLAVERY_HIDPP_FEATURE_ROOT,
-	                         slavery_hidpp_encode_function(SLAVERY_HIDPP_FUNCTION_ROOT_GET_PROTOCOL_VERSION),
-	                         0x00,
-	                         0x00,
-	                         0x00};
-	uint8_t response_buf[SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG];
+	device->protocol_version = NULL;
+	uint8_t request_data[] = {SLAVERY_REPORT_ID_CONTROL_SHORT,
+	                          device->index,
+	                          SLAVERY_HIDPP_FEATURE_INDEX_ROOT,
+	                          slavery_hidpp_encode_function(SLAVERY_HIDPP_FUNCTION_ROOT_GET_PROTOCOL_VERSION),
+	                          0x00,
+	                          0x00,
+	                          0x00};
+	uint8_t response_data[SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG];
 
-	if (write(device->receiver->fd, request_buf, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT) !=
+	if (write(device->receiver->fd, request_data, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT) !=
 	    (ssize_t)SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT) {
-		log_debug("failed to request device protocol, ignoring device");
+		log_warning_errno(SLAVERY_ERROR_IO, "failed to request device protocol");
 
 		return NULL;
 	}
 
-	if (read(device->receiver->control_pipe[0], response_buf, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) !=
-	    (ssize_t)SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) {
-		log_debug("received invalid response, ignoring device");
+	if (slavery_receiver_control_read_response(
+	        device->receiver, response_data, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) < 0) {
+		log_warning(SLAVERY_ERROR_IO, "failed to read control event response from device");
 
 		return NULL;
 	}
 
-	if (response_buf[2] == 0x8f) {
-		log_debug("received error response, ignoring device");
+	asprintf(&device->protocol_version, "%d.%d", response_data[4], response_data[5]);
 
-		return NULL;
-	}
-
-	device->protocol_version = malloc(4);
-
-	snprintf(device->protocol_version, 4, "%d.%d", response_buf[4], response_buf[5]);
-
-	log_debug("device protocol: %s", device->protocol_version);
+	log_debug("device protocol %s", device->protocol_version);
 
 	return device->protocol_version;
 }
 
-int slavery_hidpp_get_type(slavery_device_t *device) {
+slavery_device_type_t slavery_hidpp_get_type(slavery_device_t *device) {
 	log_debug("getting type for device %s:%u...", device->receiver->devnode, device->index);
 
-	uint8_t request_buf[] = {SLAVERY_REPORT_ID_CONTROL_SHORT,
-	                         device->index,
-	                         slavery_hidpp_lookup_feature_id(device, SLAVERY_HIDPP_ENTRY_POINT_NAME_TYPE),
-	                         slavery_hidpp_encode_function(SLAVERY_HIDPP_FUNCTION_NAME_TYPE_GET_TYPE),
-	                         0x00,
-	                         0x00,
-	                         0x00};
-	uint8_t response_buf[SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG];
+	uint8_t request_data[] = {SLAVERY_REPORT_ID_CONTROL_SHORT,
+	                          device->index,
+	                          slavery_hidpp_feature_id_to_index(device, SLAVERY_HIDPP_FEATURE_ID_NAME_TYPE),
+	                          slavery_hidpp_encode_function(SLAVERY_HIDPP_FUNCTION_NAME_TYPE_GET_TYPE),
+	                          0x00,
+	                          0x00,
+	                          0x00};
+	uint8_t response_data[SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG];
 
-	if (write(device->receiver->fd, request_buf, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT) !=
+	if (write(device->receiver->fd, request_data, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT) !=
 	    (ssize_t)SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT) {
-		log_debug("failed to request type, ignoring device");
+		log_warning_errno(SLAVERY_ERROR_IO, "failed to request type");
 
 		return -1;
 	}
 
-	if (read(device->receiver->control_pipe[0], response_buf, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) !=
-	    (ssize_t)SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) {
-		log_debug("received invalid response, ignoring device");
+	if (slavery_receiver_control_read_response(
+	        device->receiver, response_data, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) < 0) {
+		log_warning(SLAVERY_ERROR_IO, "failed to read control event response from device");
 
-		return -1;
+		return SLAVERY_DEVICE_TYPE_UNKNOWN;
 	}
 
-	if (response_buf[2] == 0x8f) {
-		log_debug("received error response, ignoring device");
+	device->type = response_data[4];
 
-		return -1;
-	}
+	log_debug("device type %d", device->type);
 
-	device->type = response_buf[2];
-
-	log_debug("device type: %d", device->type);
-
-	return 0;
+	return device->type;
 }
 
 const char *slavery_hidpp_get_name(slavery_device_t *device) {
 	log_debug("getting name length for device %s:%u...", device->receiver->devnode, device->index);
 
-	uint8_t request_buf[] = {SLAVERY_REPORT_ID_CONTROL_SHORT,
-	                         device->index,
-	                         slavery_hidpp_lookup_feature_id(device, SLAVERY_HIDPP_ENTRY_POINT_NAME_TYPE),
-	                         slavery_hidpp_encode_function(SLAVERY_HIDPP_FUNCTION_NAME_TYPE_GET_NAME_LENGTH),
-	                         0x00,
-	                         0x00,
-	                         0x00};
-	uint8_t response_buf[SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG];
+	uint8_t request_data[] = {SLAVERY_REPORT_ID_CONTROL_SHORT,
+	                          device->index,
+	                          slavery_hidpp_feature_id_to_index(device, SLAVERY_HIDPP_FEATURE_ID_NAME_TYPE),
+	                          slavery_hidpp_encode_function(SLAVERY_HIDPP_FUNCTION_NAME_TYPE_GET_NAME_LENGTH),
+	                          0x00,
+	                          0x00,
+	                          0x00};
+	uint8_t response_data[SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG];
 
-	if (write(device->receiver->fd, request_buf, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT) !=
+	if (write(device->receiver->fd, request_data, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT) !=
 	    (ssize_t)SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT) {
-		log_debug("failed to request name length, ignoring device");
+		log_warning_errno(SLAVERY_ERROR_IO, "failed to request name length");
 
 		return NULL;
 	}
 
-	if (read(device->receiver->control_pipe[0], response_buf, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) !=
-	    (ssize_t)SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) {
-		log_debug("received invalid response, ignoring device");
+	if (slavery_receiver_control_read_response(
+	        device->receiver, response_data, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) < 0) {
+		log_warning(SLAVERY_ERROR_IO, "failed to read control event response from device");
 
 		return NULL;
 	}
 
-	if (response_buf[2] == 0x8f) {
-		log_debug("received error response, ignoring device");
+	log_debug("device name length: %u", response_data[4]);
 
-		return NULL;
-	}
-
-	log_debug("device name length: %u", response_buf[4]);
-
-	uint8_t name_length = response_buf[4];
+	uint8_t name_length = response_data[4];
 	char *name = malloc(name_length + 1);
 	char *name_pos = name;
-	request_buf[3] = slavery_hidpp_encode_function(SLAVERY_HIDPP_FUNCTION_NAME_TYPE_GET_NAME);
+	request_data[3] = slavery_hidpp_encode_function(SLAVERY_HIDPP_FUNCTION_NAME_TYPE_GET_NAME);
 
-	log_debug("getting name for device: %s:%u...", device->receiver->devnode, device->index);
+	log_debug("getting name for device %s:%u...", device->receiver->devnode, device->index);
 
 	do {
-		if (write(device->receiver->fd, request_buf, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT) !=
+		if (write(device->receiver->fd, request_data, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT) !=
 		    (ssize_t)SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT) {
-			log_debug("failed to request name, ignoring device");
+			log_warning_errno(SLAVERY_ERROR_IO, "failed to request name");
 
 			return NULL;
 		}
 
-		if (read(device->receiver->control_pipe[0], response_buf, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) !=
-		    (ssize_t)SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) {
-			log_debug("received invalid response, ignoring device");
-
-			return NULL;
-		}
-
-		if (response_buf[2] == 0x8f) {
-			log_debug("received error response, ignoring device");
+		if (slavery_receiver_control_read_response(
+		        device->receiver, response_data, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) < 0) {
+			log_warning(SLAVERY_ERROR_IO, "failed to read control event response from device");
 
 			return NULL;
 		}
@@ -740,9 +906,9 @@ const char *slavery_hidpp_get_name(slavery_device_t *device) {
 			num_bytes = 16;
 		}
 
-		name_pos = stpncpy(name_pos, (const char *)response_buf + 4, num_bytes);
-		request_buf[4] += num_bytes;
-	} while (request_buf[4] < name_length);
+		name_pos = stpncpy(name_pos, (const char *)response_data + 4, num_bytes);
+		request_data[4] += num_bytes;
+	} while (request_data[4] < name_length);
 
 	device->name = name;
 
@@ -751,57 +917,55 @@ const char *slavery_hidpp_get_name(slavery_device_t *device) {
 	return device->name;
 }
 
-uint8_t slavery_hidpp_controls_get_num_buttons(slavery_device_t *device) {
-	uint8_t request_buf[] = {SLAVERY_REPORT_ID_CONTROL_SHORT,
-	                         device->index,
-	                         slavery_hidpp_lookup_feature_id(device, SLAVERY_HIDPP_ENTRY_POINT_CONTROLS_V4),
-	                         slavery_hidpp_encode_function(0),
-	                         0x00,
-	                         0x00,
-	                         0x00};
-	uint8_t response_buf[SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG];
+ssize_t slavery_hidpp_controls_get_num_buttons(slavery_device_t *device) {
+	uint8_t request_data[] = {SLAVERY_REPORT_ID_CONTROL_SHORT,
+	                          device->index,
+	                          slavery_hidpp_feature_id_to_index(device, SLAVERY_HIDPP_FEATURE_ID_CONTROLS_V4),
+	                          slavery_hidpp_encode_function(0),
+	                          0x00,
+	                          0x00,
+	                          0x00};
+	uint8_t response_data[SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG];
 
-	if (write(device->receiver->fd, request_buf, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT) !=
+	if (write(device->receiver->fd, request_data, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT) !=
 	    (ssize_t)SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT) {
-		return 0;
+		log_warning_errno(SLAVERY_ERROR_IO, "failed to request number of buttons");
+
+		return -1;
 	}
 
-	if (read(device->receiver->control_pipe[0], response_buf, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) !=
-	    (ssize_t)SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) {
-		return 0;
+	if (slavery_receiver_control_read_response(
+	        device->receiver, response_data, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) < 0) {
+		log_warning(SLAVERY_ERROR_IO, "failed to read control event response from device");
+
+		return -1;
 	}
 
-	if (response_buf[2] == 0x8f) {
-		return 0;
-	}
-
-	device->num_buttons = response_buf[4];
+	device->num_buttons = response_data[4];
 
 	return device->num_buttons;
 }
 
 slavery_button_t *slavery_hidpp_controls_get_button(slavery_device_t *device, uint8_t button_index) {
-	uint8_t request_buf[] = {SLAVERY_REPORT_ID_CONTROL_SHORT,
-	                         device->index,
-	                         slavery_hidpp_lookup_feature_id(device, SLAVERY_HIDPP_ENTRY_POINT_CONTROLS_V4),
-	                         slavery_hidpp_encode_function(1),
-	                         button_index,
-	                         0x00,
-	                         0x00};
-	uint8_t response_buf[SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG];
+	uint8_t request_data[] = {SLAVERY_REPORT_ID_CONTROL_SHORT,
+	                          device->index,
+	                          slavery_hidpp_feature_id_to_index(device, SLAVERY_HIDPP_FEATURE_ID_CONTROLS_V4),
+	                          slavery_hidpp_encode_function(1),
+	                          button_index,
+	                          0x00,
+	                          0x00};
+	uint8_t response_data[SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG];
 	slavery_button_t *button;
 
-	if (write(device->receiver->fd, request_buf, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT) !=
+	if (write(device->receiver->fd, request_data, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT) !=
 	    (ssize_t)SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT) {
 		return NULL;
 	}
 
-	if (read(device->receiver->control_pipe[0], response_buf, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) !=
-	    (ssize_t)SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) {
-		return NULL;
-	}
+	if (slavery_receiver_control_read_response(
+	        device->receiver, response_data, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) < 0) {
+		log_warning(SLAVERY_ERROR_IO, "failed to read control event response from device");
 
-	if (response_buf[2] == 0x8f) {
 		return NULL;
 	}
 
@@ -810,25 +974,25 @@ slavery_button_t *slavery_hidpp_controls_get_button(slavery_device_t *device, ui
 	printf("get button info: ");
 
 	for (size_t i = 0; i < SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG; i++) {
-		printf("%hhx ", response_buf[i]);
+		printf("%hhx ", response_data[i]);
 	}
 
 	puts("");
 
 	button->index = button_index;
 	button->device = device;
-	button->cid = (uint16_t)response_buf[4] << 8 | response_buf[5];
-	button->task_id = (uint16_t)response_buf[6] << 8 | response_buf[7];
-	button->flags = response_buf[8];
-	button->virtual = response_buf[8] & 0x80;
-	button->persistent_divert = response_buf[8] & 0x40;
-	button->temporary_divert = response_buf[8] & 0x20;
-	button->reprogrammable = response_buf[8] & 0x10;
+	button->cid = (uint16_t)response_data[4] << 8 | response_data[5];
+	button->task_id = (uint16_t)response_data[6] << 8 | response_data[7];
+	button->flags = response_data[8];
+	button->virtual = response_data[8] & 0x80;
+	button->persistent_divert = response_data[8] & 0x40;
+	button->temporary_divert = response_data[8] & 0x20;
+	button->reprogrammable = response_data[8] & 0x10;
 	button->type = button->flags & 0x0f;
-	button->function_position = response_buf[9];
-	button->group = response_buf[10];
-	button->group_remap_mask = response_buf[11];
-	button->gesture = response_buf[12];
+	button->function_position = response_data[9];
+	button->group = response_data[10];
+	button->group_remap_mask = response_data[11];
+	button->gesture = response_data[12];
 
 	printf("virtual: %d\n", button->virtual);
 	printf("persistent divert: %d\n", button->persistent_divert);
@@ -853,14 +1017,16 @@ slavery_button_t *slavery_hidpp_controls_get_button(slavery_device_t *device, ui
 none = 0x33
 */
 void slavery_hidpp_controls_button_remap(slavery_button_t *button) {
-	uint8_t request_buf[] = {
+	UNUSED(button);
+
+	/*uint8_t request_data[] = {
 	    SLAVERY_REPORT_ID_CONTROL_LONG,
 	    button->device->index,
-	    slavery_hidpp_lookup_feature_id(button->device, SLAVERY_HIDPP_ENTRY_POINT_CONTROLS_V4),
+	    slavery_hidpp_feature_id_to_index(button->device, SLAVERY_HIDPP_FEATURE_ID_CONTROLS_V4),
 	    slavery_hidpp_encode_function(3),
 	    button->cid >> 8,
 	    button->cid & 0xff,
-	    /*
+	    / *
 	    2 mouse move
 	    3 stop mouse move
 
@@ -878,56 +1044,55 @@ void slavery_hidpp_controls_button_remap(slavery_button_t *button) {
 	    back:
 	    event size: 15: 20 01 02 08 00 00 00 00 00 00 36 00 00 00 00
 	    event size: 15: 20 01 02 00 00 00 00 00 00 00 3e 00 00 00 00
-	    */
-	    0x2a,
-	    0x00, // button->cid >> 8,
-	    0x53, // button->cid & 0xff,
-	    0x00,
-	    0x00,
-	    0x00,
-	    0x00,
-	    0x00,
-	    0x00,
-	    0x00,
-	    0x00,
-	    0x00,
-	    0x00};
-	uint8_t response_buf[SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG];
+	    * /
+	0x2a,
+	0x00, // button->cid >> 8,
+	0x53, // button->cid & 0xff,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00};
+uint8_t response_data[SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG];
 
-	printf("reprog: %d, pers: %d, temp: %d\n",
-	       button->reprogrammable,
-	       button->persistent_divert,
-	       button->temporary_divert);
-	printf("set button remap: ");
+printf("reprog: %d, pers: %d, temp: %d\n",
+	   button->reprogrammable,
+	   button->persistent_divert,
+	   button->temporary_divert);
+printf("set button remap: ");
 
-	for (size_t i = 0; i < SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG; i++) {
-		printf("%hhx ", request_buf[i]);
-	}
+for (size_t i = 0; i < SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG; i++) {
+	printf("%hhx ", request_data[i]);
+}
 
-	puts("");
+puts("");
 
-	if (write(button->device->receiver->fd, request_buf, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) !=
-	    (ssize_t)SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) {
-		return;
-	}
+if (write(button->device->receiver->fd, request_data, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) !=
+	(ssize_t)SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) {
+	return;
+}
 
-	if (read(button->device->receiver->control_pipe[0],
-	         response_buf,
-	         SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) != (ssize_t)SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) {
-		return;
-	}
+if (read(button->device->receiver->control_pipe[0], response_data, SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG)
+!= (ssize_t)SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG) { return;
+}
 
-	if (response_buf[2] == 0xff) {
-		printf("remap error\n");
+if (response_data[2] == 0xff) {
+	printf("remap error\n");
 
-		exit(0);
+	exit(0);
 
-		return;
-	}
+	return;
+}
 
-	for (size_t i = 0; i < SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG; i++) {
-		printf("%hhx ", response_buf[i]);
-	}
+for (size_t i = 0; i < SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG; i++) {
+	printf("%hhx ", response_data[i]);
+}
 
-	puts("");
+puts("");
+*/
 }

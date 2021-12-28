@@ -7,6 +7,7 @@
 		],
 		"action": "pressed",
 		"enabled": true,
+		"inhibit_cursor": false,
 		"do_default": true,
 		"do_command": "/bin/nautilus",
 		"do_keyboard": [

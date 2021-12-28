@@ -1,5 +1,7 @@
 #pragma once
 
+#include "hidpp.h"
+
 #include <threads.h>
 #include <unistd.h>
 
@@ -23,30 +25,33 @@ typedef enum
 
 typedef enum
 {
-	SLAVERY_HIDPP_ENTRY_POINT_ROOT = 0x0000,
-	SLAVERY_HIDPP_ENTRY_POINT_FEATURE_SET = 0x0001,
-	SLAVERY_HIDPP_ENTRY_POINT_FEATURE_INFO = 0x0002,
-	SLAVERY_HIDPP_ENTRY_POINT_FIRMWARE = 0x0003,
-	SLAVERY_HIDPP_ENTRY_POINT_NAME_TYPE = 0x0005,
-	SLAVERY_HIDPP_ENTRY_POINT_RESET = 0x0020,
-	SLAVERY_HIDPP_ENTRY_POINT_CRYPTO = 0x0021,
-	SLAVERY_HIDPP_ENTRY_POINT_BATTERY = 0x1000,
-	SLAVERY_HIDPP_ENTRY_POINT_HOST = 0x1814,
-	SLAVERY_HIDPP_ENTRY_POINT_CONTROLS_V1 = 0x1b00,
-	SLAVERY_HIDPP_ENTRY_POINT_CONTROLS_V3 = 0x1b03,
-	SLAVERY_HIDPP_ENTRY_POINT_CONTROLS_V4 = 0x1b04
-} slavery_hidpp_entry_point_t;
+	SLAVERY_HIDPP_FEATURE_ID_ROOT = 0x0000,
+	SLAVERY_HIDPP_FEATURE_ID_FEATURE_SET = 0x0001,
+	SLAVERY_HIDPP_FEATURE_ID_FIRMWARE = 0x0003,
+	SLAVERY_HIDPP_FEATURE_ID_NAME_TYPE = 0x0005,
+	SLAVERY_HIDPP_FEATURE_ID_RESET = 0x0020,
+	SLAVERY_HIDPP_FEATURE_ID_CRYPTO = 0x0021,
+	SLAVERY_HIDPP_FEATURE_ID_BATTERY = 0x1000,
+	SLAVERY_HIDPP_FEATURE_ID_HOST = 0x1814,
+	SLAVERY_HIDPP_FEATURE_ID_CONTROLS_V4 = 0x1b04
+} slavery_hidpp_feature_id_t;
 
 typedef enum
 {
-	SLAVERY_HIDPP_FUNCTION_ROOT_GET_FEATURE = 0x00,
+	SLAVERY_HIDPP_FEATURE_INDEX_ROOT = 0x00,
+	SLAVERY_HIDPP_FEATURE_INDEX_ERROR = 0x8f
+} slavery_hidpp_feature_index_t;
+
+typedef enum
+{
+	SLAVERY_HIDPP_FUNCTION_ROOT_GET_FEATURE_INDEX = 0x00,
 	SLAVERY_HIDPP_FUNCTION_ROOT_GET_PROTOCOL_VERSION = 0x01
 } slavery_hidpp_function_root_t;
 
 typedef enum
 {
-	SLAVERY_HIDPP_FUNCTION_FEATURE_SET_GET_NUMBER = 0x00,
-	SLAVERY_HIDPP_FUNCTION_FEATURE_SET_GET_FEATURE = 0x01,
+	SLAVERY_HIDPP_FUNCTION_FEATURE_SET_GET_COUNT = 0x00,
+	SLAVERY_HIDPP_FUNCTION_FEATURE_SET_GET_FEATURE_ID = 0x01,
 } slavery_hidpp_function_feature_set_t;
 
 typedef enum
@@ -86,6 +91,7 @@ typedef enum
 
 typedef enum
 {
+	SLAVERY_DEVICE_TYPE_UNKNOWN = -1,
 	SLAVERY_DEVICE_TYPE_KEYBOARD,
 	SLAVERY_DEVICE_TYPE_REMOTE_CONTROL,
 	SLAVERY_DEVICE_TYPE_NUMPAD,
@@ -104,28 +110,12 @@ typedef enum
 	SLAVERY_HIDPP_BUTTON_TYPE_FUNCTION_TOGGLE = 0x08
 } slavery_hidpp_button_type_t;
 
-struct slavery_receiver_t {
-	char *devnode;
-	uint16_t vendor_id;
-	uint16_t product_id;
-	char *name;
-	char *address;
-	uint8_t num_devices;
-	slavery_device_t **devices;
-	thrd_t listener_thread;
-	int fd;
-	int control_pipe[2];
-};
-
-struct slavery_device_t {
-	slavery_receiver_t *receiver;
+typedef struct {
+	uint16_t id;
 	uint8_t index;
-	char *protocol_version;
-	slavery_device_type_t type;
-	char *name;
-	uint8_t num_buttons;
-	slavery_button_t **buttons;
-};
+	uint8_t version;
+	uint8_t flags;
+} slavery_feature_t;
 
 struct slavery_button_t {
 	slavery_device_t *device;
@@ -146,22 +136,69 @@ struct slavery_button_t {
 
 typedef struct slavery_event_t {
 	slavery_receiver_t *receiver;
-	size_t size;
-	uint8_t *data;
+	size_t request_size;
+	size_t response_size;
+	uint8_t *request_data;
+	uint8_t *response_data;
 } slavery_event_t;
 
-uint8_t slavery_hidpp_lookup_feature_id(const slavery_device_t *device, const uint16_t number);
+struct slavery_receiver_t {
+	char *devnode;
+	uint16_t vendor_id;
+	uint16_t product_id;
+	char *name;
+	char *address;
+	size_t num_devices;
+	slavery_device_t **devices;
+	thrd_t listener_thread;
+	int fd;
+	int control_pipe[2];
+};
+
+struct slavery_device_t {
+	slavery_receiver_t *receiver;
+	uint8_t index;
+	char *protocol_version;
+	slavery_device_type_t type;
+	char *name;
+	size_t num_features;
+	slavery_feature_t **features;
+	size_t num_buttons;
+	slavery_button_t **buttons;
+};
+
+extern const uint16_t SLAVERY_USB_VENDOR_ID_LOGITECH;
+extern const uint16_t SLAVERY_USB_PRODUCT_ID_UNIFYING_RECEIVER;
+
+extern const size_t SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_SHORT;
+extern const size_t SLAVERY_HIDPP_PACKET_LENGTH_CONTROL_LONG;
+extern const size_t SLAVERY_HIDPP_PACKET_LENGTH_EVENT;
+extern const size_t SLAVERY_HIDPP_PACKET_LENGTH_MAX;
+
+extern const uint8_t SLAVERY_HIDPP_SOFTWARE_ID;
+extern const uint8_t SLAVERY_HIDPP_FEATURE_ROOT;
+extern const uint8_t SLAVERY_HIDPP_FEATURE_ERROR;
+
+ssize_t slavery_hidpp_get_features(slavery_device_t *device);
+uint8_t slavery_hidpp_feature_count(slavery_device_t *device);
+ssize_t slavery_hidpp_feature_id_to_index(slavery_device_t *device, const uint16_t id);
 const char *slavery_hidpp_get_protocol_version(slavery_device_t *device);
-int slavery_hidpp_get_type(slavery_device_t *device);
+slavery_device_type_t slavery_hidpp_get_type(slavery_device_t *device);
 const char *slavery_hidpp_get_name(slavery_device_t *device);
-uint8_t slavery_hidpp_controls_get_num_buttons(slavery_device_t *device);
+ssize_t slavery_hidpp_controls_get_num_buttons(slavery_device_t *device);
 slavery_button_t *slavery_hidpp_controls_get_button(slavery_device_t *device, uint8_t button_index);
 void slavery_hidpp_controls_button_remap(slavery_button_t *button);
 
 slavery_receiver_t *slavery_receiver_from_devnode(const char *devnode);
 int slavery_receiver_get_report_descriptor(slavery_receiver_t *receiver);
 void *slavery_receiver_listen(slavery_receiver_t *receiver);
+int slavery_receiver_control_read_response(slavery_receiver_t *receiver,
+                                           uint8_t response_data[],
+                                           ssize_t response_size);
+int slavery_receiver_control_write_response(slavery_receiver_t *receiver,
+                                            uint8_t response_data[],
+                                            ssize_t response_size);
 
 void *slavery_event_dispatch(slavery_event_t *event);
 
-#define slavery_hidpp_encode_function(function) (function << 4) | SLAVERY_HIDPP_SOFTWARE_ID
+#define slavery_hidpp_encode_function(function) ((function << 4) | SLAVERY_HIDPP_SOFTWARE_ID)

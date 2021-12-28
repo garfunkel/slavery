@@ -15,7 +15,7 @@ const char *ERROR_LEVEL_INFO = "INFO";
 const char *ERROR_LEVEL_WARNING = "WARNING";
 const char *ERROR_LEVEL_ERROR = "ERROR";
 
-const char *bytes_to_hex(const uint8_t bytes[], const size_t num_bytes, char *hex) {
+const char *bytes_to_hex(const uint8_t bytes[], const size_t num_bytes, char *restrict hex) {
 	if (hex == NULL) {
 		hex = malloc(num_bytes * 5);
 	}
@@ -27,21 +27,6 @@ const char *bytes_to_hex(const uint8_t bytes[], const size_t num_bytes, char *he
 	sprintf(hex + ((num_bytes - 1) * 5), "0x%02hhx", bytes[num_bytes - 1]);
 
 	return hex;
-}
-
-#define ERROR_STRING(error_id, error_string) error_string,
-
-const char *error_id_to_string(const error_id_t error_id) {
-	static const char *error_table[] = {ERROR_TABLE(ERROR_STRING)};
-
-#undef ERROR_TABLE
-#undef ERROR_STRING
-
-	if (error_id < 0 || error_id >= ERROR_UNKNOWN) {
-		return error_table[ERROR_UNKNOWN];
-	}
-
-	return error_table[error_id];
 }
 
 void log_x(const char *level, const char *file, const char *func, const int line, const char *fmt, ...) {
@@ -61,7 +46,7 @@ void log_x(const char *level, const char *file, const char *func, const int line
 }
 
 void log_x_error(const char *level,
-                 const error_id_t error_id,
+                 const slavery_error_t error,
                  const bool with_errno,
                  const char *file,
                  const char *func,
@@ -94,7 +79,7 @@ void log_x_error(const char *level,
 	        file,
 	        func,
 	        line,
-	        error_id_to_string(error_id),
+	        slavery_error_to_string(error),
 	        thread_name,
 	        msg);
 

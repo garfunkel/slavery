@@ -183,10 +183,8 @@ struct slavery_button_t {
 
 typedef struct slavery_event_t {
 	slavery_receiver_t *receiver;
-	size_t request_size;
-	size_t response_size;
-	uint8_t *request_data;
-	uint8_t *response_data;
+	size_t size;
+	uint8_t *data;
 } slavery_event_t;
 
 struct slavery_receiver_t {

@@ -360,12 +360,13 @@ int slavery_receiver_get_devices(slavery_receiver_t *receiver) {
 void *slavery_receiver_listen(slavery_receiver_t *receiver) {
 	struct sigaction sig_action = {.sa_handler = slavery_receiver_listener_signal_handler,
 	                               .sa_flags = SA_RESETHAND};
+	uint8_t response_data[SLAVERY_HIDPP_PACKET_LENGTH_MAX];
+
 	sigaction(SIGINT, &sig_action, NULL);
 
 	log_debug("started");
 
 	while (true) {
-		uint8_t *response_data = malloc(SLAVERY_HIDPP_PACKET_LENGTH_MAX);
 		ssize_t response_size = read(receiver->fd, response_data, SLAVERY_HIDPP_PACKET_LENGTH_MAX);
 
 		if (response_size < 0) {
@@ -373,13 +374,8 @@ void *slavery_receiver_listen(slavery_receiver_t *receiver) {
 				log_debug("read() interrupted, exiting...");
 			}
 
-			free(response_data);
-
 			return NULL;
 		}
-
-		// event->size = event_size;
-		// event->data = realloc(event->data, event->size);
 
 		switch (response_data[0]) {
 			case SLAVERY_REPORT_ID_EVENT: {
@@ -396,28 +392,25 @@ void *slavery_receiver_listen(slavery_receiver_t *receiver) {
 				if (pthread_attr_init(&attr) != 0) {
 					log_warning(SLAVERY_ERROR_OS, "pthread_attr_init() failed");
 
-					free(response_data);
-
 					return NULL;
 				}
 
 				if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0) {
 					log_warning(SLAVERY_ERROR_OS, "pthread_attr_setdetachstate() failed");
 
-					free(response_data);
-
 					return NULL;
 				}
 
 				slavery_event_t *event = malloc(sizeof(slavery_event_t));
-				event->response_size = response_size;
-				event->response_data = response_data;
+				event->size = response_size;
+				event->data = malloc(response_size);
+				memcpy(event->data, response_data, response_size);
 
 				if (pthread_create(
 				        (pthread_t[]){0}, &attr, (pthread_callback_t)slavery_event_dispatch, event) != 0) {
 					log_warning(SLAVERY_ERROR_OS, "pthread_create() failed");
 
-					free(response_data);
+					free(event->data);
 					free(event);
 
 					return NULL;
@@ -426,7 +419,7 @@ void *slavery_receiver_listen(slavery_receiver_t *receiver) {
 				if (pthread_attr_destroy(&attr) != 0) {
 					log_warning(SLAVERY_ERROR_OS, "pthread_attr_destroy() failed");
 
-					free(response_data);
+					free(event->data);
 					free(event);
 
 					return NULL;
@@ -497,7 +490,7 @@ int slavery_receiver_control_write_response(slavery_receiver_t *receiver,
 }
 
 void *slavery_event_dispatch(slavery_event_t *event) {
-	// free(event->data);
+	free(event->data);
 	free(event);
 
 	return NULL;
@@ -606,11 +599,16 @@ void slavery_device_free(slavery_device_t *device) {
 	free(device->protocol_version);
 	free(device->name);
 
-	for (uint8_t i = 0; i < device->num_buttons; i++) {
+	for (size_t i = 0; i < device->num_buttons; i++) {
 		free(device->buttons[i]);
 	}
 
+	for (size_t i = 0; i < device->num_features; i++) {
+		free(device->features[i]);
+	}
+
 	free(device->buttons);
+	free(device->features);
 	free(device);
 }
 
@@ -774,7 +772,7 @@ ssize_t slavery_hidpp_get_features(slavery_device_t *device) {
 }
 
 ssize_t slavery_hidpp_feature_id_to_index(slavery_device_t *device, const uint16_t id) {
-	for (uint8_t i = 0; i < device->num_features; i++) {
+	for (size_t i = 0; i < device->num_features; i++) {
 		if (device->features[i]->id == id) {
 			return device->features[i]->index;
 		}
@@ -845,7 +843,7 @@ slavery_device_type_t slavery_hidpp_get_type(slavery_device_t *device) {
 
 	device->type = response_data[4];
 
-	log_debug("device type %d", device->type);
+	log_debug("device type %s", slavery_device_type_to_string(device->type));
 
 	return device->type;
 }

@@ -32,7 +32,7 @@ const char *slavery_config_action_to_string(const slavery_config_action_t action
 		ACTION_MAP(ACTION)
 #undef ACTION
 		default:
-			return "Unknown action";
+			return "unknown";
 	}
 }
 

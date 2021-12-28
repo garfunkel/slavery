@@ -630,7 +630,7 @@ void slavery_device_print(const slavery_device_t *device) {
 
 slavery_feature_t *slavery_hidpp_get_feature(slavery_device_t *device,
                                              slavery_hidpp_feature_id_t feature_id) {
-	log_debug("getting feature information for feature ID %u", feature_id);
+	log_debug("getting feature information for feature %s", slavery_hidpp_feature_id_to_string(feature_id));
 
 	uint8_t request_data[] = {SLAVERY_REPORT_ID_CONTROL_SHORT,
 	                          device->index,
@@ -667,7 +667,7 @@ slavery_feature_t *slavery_hidpp_get_feature(slavery_device_t *device,
 	feature->flags = response_data[5];
 	feature->version = response_data[6];
 
-	log_debug("received information for feature ID %u", feature_id);
+	log_debug("received information for feature %s", slavery_hidpp_feature_id_to_string(feature_id));
 
 	return feature;
 }

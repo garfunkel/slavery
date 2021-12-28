@@ -23,18 +23,42 @@ typedef enum
 	SLAVERY_HIDPP_DEVICE_INDEX_RECEIVER = 0xff
 } slavery_hidpp_device_index_t;
 
+#define FEATURE_ID_MAP(FEATURE_ID)                                          \
+	FEATURE_ID(SLAVERY_HIDPP_FEATURE_ID_ROOT, 0x0000, "root")               \
+	FEATURE_ID(SLAVERY_HIDPP_FEATURE_ID_FEATURE_SET, 0x0001, "feature_set") \
+	FEATURE_ID(SLAVERY_HIDPP_FEATURE_ID_FIRMWARE, 0x0003, "firmware")       \
+	FEATURE_ID(SLAVERY_HIDPP_FEATURE_ID_NAME_TYPE, 0x0005, "name/type")     \
+	FEATURE_ID(SLAVERY_HIDPP_FEATURE_ID_RESET, 0x0020, "reset")             \
+	FEATURE_ID(SLAVERY_HIDPP_FEATURE_ID_CRYPTO, 0x0021, "crypto")           \
+	FEATURE_ID(SLAVERY_HIDPP_FEATURE_ID_BATTERY, 0x1000, "battery")         \
+	FEATURE_ID(SLAVERY_HIDPP_FEATURE_ID_HOST, 0x1814, "host")               \
+	FEATURE_ID(SLAVERY_HIDPP_FEATURE_ID_CONTROLS_V4, 0x1b04, "controls_v4") \
+	FEATURE_ID_UNKNOWN(SLAVERY_HIDPP_FEATURE_ID_UNKNOWN, "unknown")
+
 typedef enum
 {
-	SLAVERY_HIDPP_FEATURE_ID_ROOT = 0x0000,
-	SLAVERY_HIDPP_FEATURE_ID_FEATURE_SET = 0x0001,
-	SLAVERY_HIDPP_FEATURE_ID_FIRMWARE = 0x0003,
-	SLAVERY_HIDPP_FEATURE_ID_NAME_TYPE = 0x0005,
-	SLAVERY_HIDPP_FEATURE_ID_RESET = 0x0020,
-	SLAVERY_HIDPP_FEATURE_ID_CRYPTO = 0x0021,
-	SLAVERY_HIDPP_FEATURE_ID_BATTERY = 0x1000,
-	SLAVERY_HIDPP_FEATURE_ID_HOST = 0x1814,
-	SLAVERY_HIDPP_FEATURE_ID_CONTROLS_V4 = 0x1b04
+#define FEATURE_ID(feature_id_id, feature_id_value, feature_id_string) feature_id_id = feature_id_value,
+#define FEATURE_ID_UNKNOWN(feature_id_id, feature_id_string) feature_id_id
+	FEATURE_ID_MAP(FEATURE_ID)
+#undef FEATURE_ID
+#undef FEATURE_ID_UNKNOWN
 } slavery_hidpp_feature_id_t;
+
+#pragma weak slavery_hidpp_feature_id_to_string
+const char *slavery_hidpp_feature_id_to_string(const slavery_hidpp_feature_id_t feature_id) {
+	switch (feature_id) {
+#define FEATURE_ID(feature_id_id, feature_id_value, feature_id_string) \
+	case feature_id_id:                                                \
+		return feature_id_string;
+#define FEATURE_ID_UNKNOWN(feature_id_id, feature_id_string) \
+	default:                                                 \
+		return feature_id_string;
+		FEATURE_ID_MAP(FEATURE_ID)
+#undef FEATURE_ID
+#undef FEATURE_ID_UNKNOWN
+#undef FEATURE_ID_MAP
+	}
+}
 
 typedef enum
 {
@@ -89,18 +113,41 @@ typedef enum
 	SLAVERY_HIDPP_FUNCTION_HOST_SET_HOST = 0x01
 } slavery_hidpp_function_host_t;
 
+#define DEVICE_TYPE_MAP(DEVICE_TYPE)                                  \
+	DEVICE_TYPE(SLAVERY_DEVICE_TYPE_KEYBOARD, "keyboard")             \
+	DEVICE_TYPE(SLAVERY_DEVICE_TYPE_REMOTE_CONTROL, "remote_control") \
+	DEVICE_TYPE(SLAVERY_DEVICE_TYPE_NUMPAD, "numpad")                 \
+	DEVICE_TYPE(SLAVERY_DEVICE_TYPE_MOUSE, "mouse")                   \
+	DEVICE_TYPE(SLAVERY_DEVICE_TYPE_TOUCHPAD, "touchpad")             \
+	DEVICE_TYPE(SLAVERY_DEVICE_TYPE_TRACKBALL, "trackball")           \
+	DEVICE_TYPE(SLAVERY_DEVICE_TYPE_PRESENTER, "presenter")           \
+	DEVICE_TYPE(SLAVERY_DEVICE_TYPE_RECEIVER, "receiver")             \
+	DEVICE_TYPE_UNKNOWN(SLAVERY_DEVICE_TYPE_UNKNOWN, "unknown")
+
 typedef enum
 {
-	SLAVERY_DEVICE_TYPE_UNKNOWN = -1,
-	SLAVERY_DEVICE_TYPE_KEYBOARD,
-	SLAVERY_DEVICE_TYPE_REMOTE_CONTROL,
-	SLAVERY_DEVICE_TYPE_NUMPAD,
-	SLAVERY_DEVICE_TYPE_MOUSE,
-	SLAVERY_DEVICE_TYPE_TOUCHPAD,
-	SLAVERY_DEVICE_TYPE_TRACKBALL,
-	SLAVERY_DEVICE_TYPE_PRESENTER,
-	SLAVERY_DEVICE_TYPE_RECEIVER
+#define DEVICE_TYPE(device_type_id, device_type_string) device_type_id,
+#define DEVICE_TYPE_UNKNOWN(device_type_id, device_type_string) device_type_id
+	DEVICE_TYPE_MAP(DEVICE_TYPE)
+#undef DEVICE_TYPE
+#undef DEVICE_TYPE_UNKNOWN
 } slavery_device_type_t;
+
+#pragma weak slavery_device_type_to_string
+const char *slavery_device_type_to_string(const slavery_device_type_t device_type) {
+	switch (device_type) {
+#define DEVICE_TYPE(device_type_id, device_type_string) \
+	case device_type_id:                                \
+		return device_type_string;
+#define DEVICE_TYPE_UNKNOWN(device_type_id, device_type_string) \
+	default:                                                    \
+		return device_type_string;
+		DEVICE_TYPE_MAP(DEVICE_TYPE)
+#undef DEVICE_TYPE
+#undef DEVICE_TYPE_UNKNOWN
+#undef DEVICE_TYPE_MAP
+	}
+}
 
 typedef enum
 {

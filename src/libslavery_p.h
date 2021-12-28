@@ -167,7 +167,7 @@ typedef struct {
 struct slavery_button_t {
 	slavery_device_t *device;
 	uint8_t index;
-	uint16_t cid;
+	slavery_hidpp_button_t cid;
 	uint16_t task_id;
 	uint8_t flags;
 	bool virtual;

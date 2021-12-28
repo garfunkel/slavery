@@ -979,14 +979,14 @@ slavery_button_t *slavery_hidpp_controls_get_button(slavery_device_t *device, ui
 
 	button->index = button_index;
 	button->device = device;
-	button->cid = (uint16_t)response_data[4] << 8 | response_data[5];
+	button->cid = (slavery_hidpp_button_t)response_data[4] << 8 | response_data[5];
 	button->task_id = (uint16_t)response_data[6] << 8 | response_data[7];
 	button->flags = response_data[8];
 	button->virtual = response_data[8] & 0x80;
 	button->persistent_divert = response_data[8] & 0x40;
 	button->temporary_divert = response_data[8] & 0x20;
 	button->reprogrammable = response_data[8] & 0x10;
-	button->type = button->flags & 0x0f;
+	button->type = (slavery_hidpp_button_type_t)button->flags & 0x0f;
 	button->function_position = response_data[9];
 	button->group = response_data[10];
 	button->group_remap_mask = response_data[11];

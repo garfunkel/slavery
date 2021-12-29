@@ -215,6 +215,15 @@ slavery_hidpp_button_t slavery_hidpp_string_to_button(const char *button) {
 #undef BUTTON_MAP
 }
 
+/*typedef enum
+{
+    SLAVERY_HIDPP_EVENT_MASK_LEFT = 0x01,
+    SLAVERY_HIDPP_EVENT_MASK_RIGHT = 0x02,
+    SLAVERY_HIDPP_EVENT_MASK_MIDDLE = 0x04,
+    SLAVERY_HIDPP_EVENT_MASK_BACK = 0x08,
+    SLAVERY_HIDPP_EVENT_MASK_FORWARD = 0x10,
+} slavery_hidpp_event_mask_t;*/
+
 typedef struct {
 	uint16_t id;
 	uint8_t index;

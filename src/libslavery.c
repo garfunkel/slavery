@@ -31,7 +31,21 @@ const size_t SLAVERY_HIDPP_PACKET_LENGTH_MAX = 32;
 const uint8_t SLAVERY_HIDPP_SOFTWARE_ID = 0x01;
 
 static void slavery_receiver_listener_signal_handler(int signum) {
+#if __GLIBC_MINOR__ >= 32
 	log_debug("process received signal SIG%s, stopping listener...", sigabbrev_np(signum));
+#else
+	#include <ctype.h>
+
+	char *abbr = strdup(sys_signame[signum]);
+
+	for (size_t i = 0; i < strlen(abbr); i++) {
+		abbr[i] = toupper(abbr[i]);
+	}
+
+	log_debug("process received signal SIG%s, stopping listener...", abbr);
+
+	free(abbr);
+#endif
 
 	if (gettid() == getpid()) {
 		log_debug("main thread received signal SIG%s, exiting...", sigabbrev_np(signum));
@@ -293,10 +307,6 @@ slavery_receiver_t *slavery_receiver_from_devnode(const char *devnode) {
 		return NULL;
 	}
 
-	if (pthread_setname_np(receiver->listener_thread, "listener") != 0) {
-		log_warning(SLAVERY_ERROR_OS, "pthread_setname_np() failed");
-	}
-
 	log_debug("receiver listener thread started");
 
 	return receiver;
@@ -358,13 +368,17 @@ int slavery_receiver_get_devices(slavery_receiver_t *receiver) {
 // FIXME: hidraw read read/writes full records, my pipe doesn't necessarily
 // FIXME: sending control events to pipe when not actively requested -> pipe grows and isn't read from.
 void *slavery_receiver_listen(slavery_receiver_t *receiver) {
+	if (pthread_setname_np(pthread_self(), "listener") != 0) {
+		log_warning(SLAVERY_ERROR_OS, "pthread_setname_np() failed");
+	}
+
+	log_debug("started");
+
 	struct sigaction sig_action = {.sa_handler = slavery_receiver_listener_signal_handler,
 	                               .sa_flags = SA_RESETHAND};
 	uint8_t response_data[SLAVERY_HIDPP_PACKET_LENGTH_MAX];
 
 	sigaction(SIGINT, &sig_action, NULL);
-
-	log_debug("started");
 
 	while (true) {
 		ssize_t response_size = read(receiver->fd, response_data, SLAVERY_HIDPP_PACKET_LENGTH_MAX);
@@ -402,6 +416,7 @@ void *slavery_receiver_listen(slavery_receiver_t *receiver) {
 				}
 
 				slavery_event_t *event = malloc(sizeof(slavery_event_t));
+				event->receiver = receiver;
 				event->size = response_size;
 				event->data = malloc(response_size);
 				memcpy(event->data, response_data, response_size);
@@ -490,6 +505,46 @@ int slavery_receiver_control_write_response(slavery_receiver_t *receiver,
 }
 
 void *slavery_event_dispatch(slavery_event_t *event) {
+	if (pthread_setname_np(pthread_self(), "event") != 0) {
+		log_warning(SLAVERY_ERROR_OS, "pthread_setname_np() failed");
+	}
+
+	log_debug("started");
+
+	slavery_device_t *device = NULL;
+
+	for (size_t i = 0; i < event->receiver->num_devices; i++) {
+		if (event->receiver->devices[i]->index == event->data[1]) {
+			device = event->receiver->devices[i];
+		}
+	}
+
+	if (device) {
+		log_debug("received event for device %u", device->index);
+
+		slavery_button_t *buttons[device->num_buttons];
+		size_t num_pressed = 0;
+
+		for (size_t i = 0; i < device->num_buttons; i++) {
+			// Determine which buttons pressed.
+			if (event->data[3] & 0x01 && device->buttons[i]->cid == SLAVERY_HIDPP_BUTTON_LEFT) {
+				buttons[num_pressed++] = device->buttons[i];
+			} else if (event->data[3] & 0x02 && device->buttons[i]->cid == SLAVERY_HIDPP_BUTTON_RIGHT) {
+				buttons[num_pressed++] = device->buttons[i];
+			} else if (event->data[3] & 0x04 && device->buttons[i]->cid == SLAVERY_HIDPP_BUTTON_MIDDLE) {
+				buttons[num_pressed++] = device->buttons[i];
+			} else if (event->data[3] & 0x08 && device->buttons[i]->cid == SLAVERY_HIDPP_BUTTON_BACK) {
+				buttons[num_pressed++] = device->buttons[i];
+			} else if (event->data[3] & 0x10 && device->buttons[i]->cid == SLAVERY_HIDPP_BUTTON_FORWARD) {
+				buttons[num_pressed++] = device->buttons[i];
+			}
+		}
+
+		printf("buttons: %lu\n", num_pressed);
+	} else {
+		log_debug("received event for an unrecognised device %u", event->data[1]);
+	}
+
 	free(event->data);
 	free(event);
 
@@ -993,6 +1048,9 @@ slavery_button_t *slavery_hidpp_controls_get_button(slavery_device_t *device, ui
 	button->group_remap_mask = response_data[11];
 	button->gesture = response_data[12];
 
+	printf("index: %u\n", button->index);
+	printf("cid: %d\n", button->cid);
+	printf("task id: %u\n", button->task_id);
 	printf("virtual: %d\n", button->virtual);
 	printf("persistent divert: %d\n", button->persistent_divert);
 	printf("temporary divert: %d\n", button->temporary_divert);

@@ -32,4 +32,5 @@ jobs:
         uses: BSFishy/meson-build@v1.0.3
         with:
           action: test
+          meson-version: 0.60.0
 

@@ -1,4 +1,3 @@
-#define _DEFAULT_SOURCE
 #define _GNU_SOURCE
 
 #include "libslavery.h"
@@ -33,23 +32,25 @@ const uint8_t SLAVERY_HIDPP_SOFTWARE_ID = 0x01;
 
 static void slavery_receiver_listener_signal_handler(int signum) {
 #if __GLIBC_MINOR__ >= 32
-	log_debug("process received signal SIG%s, stopping listener...", sigabbrev_np(signum));
+	char *abbr = sigabbrev_np(signum);
 #else
 	#include <ctype.h>
 
-	char *abbr = strdup(sys_signame[signum]);
+	char *abbr = strdup(sys_siglist[signum]);
 
 	for (size_t i = 0; i < strlen(abbr); i++) {
 		abbr[i] = toupper(abbr[i]);
 	}
+#endif
 
 	log_debug("process received signal SIG%s, stopping listener...", abbr);
 
-	free(abbr);
-#endif
-
 	if (gettid() == getpid()) {
-		log_debug("main thread received signal SIG%s, exiting...", sigabbrev_np(signum));
+		log_debug("main thread received signal SIG%s, exiting...", abbr);
+
+#if __GLIBC_MINOR__ < 32
+		free(abbr);
+#endif
 
 		raise(signum);
 	}

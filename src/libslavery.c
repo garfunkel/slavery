@@ -32,7 +32,7 @@ const uint8_t SLAVERY_HIDPP_SOFTWARE_ID = 0x01;
 
 static void slavery_receiver_listener_signal_handler(int signum) {
 #if __GLIBC_MINOR__ >= 32
-	char *abbr = sigabbrev_np(signum);
+	char *abbr = (char *)sigabbrev_np(signum);
 #else
 	#include <ctype.h>
 

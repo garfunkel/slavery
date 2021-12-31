@@ -39,7 +39,7 @@ jobs:
         uses: BSFishy/meson-build@v1.0.3
         with:
           action: build
-          options: --ninja-args test
+          options: doc
           meson-version: 0.60.0
 
       - name: Deploy Documentation

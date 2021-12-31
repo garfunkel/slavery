@@ -38,7 +38,7 @@ jobs:
       - name: Build Documentation
         uses: BSFishy/meson-build@v1.0.3
         with:
-          action: compile
+          action: build
           options: --ninja-args test
           meson-version: 0.60.0
 

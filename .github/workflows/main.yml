@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Dependencies
-        run: sudo apt-get install libudev-dev libjson-c-dev libevdev-dev
+        run: sudo apt-get install libudev-dev libjson-c-dev libevdev-dev doxygen
 
       - name: Build & Test
         uses: BSFishy/meson-build@v1.0.3

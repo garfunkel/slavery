@@ -4,6 +4,7 @@
 
 #include "hidpp.h"
 #include "libslavery_p.h"
+#include "virtual_input.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -311,6 +312,8 @@ slavery_receiver_t *slavery_receiver_from_devnode(const char *devnode) {
 
 	log_debug("receiver listener thread started");
 
+	virtual_input_create_device();
+
 	return receiver;
 }
 
@@ -543,6 +546,8 @@ void *slavery_event_dispatch(slavery_event_t *event) {
 		}
 
 		printf("buttons: %lu\n", num_pressed);
+
+		virtual_input(num_pressed > 0 ? 1 : 0);
 	} else {
 		log_debug("received event for an unrecognised device %u", event->data[1]);
 	}

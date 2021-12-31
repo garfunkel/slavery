@@ -1,8 +1,11 @@
 project('slavery', 'c',	license: 'MIT', version: '0.1',	default_options: ['warning_level=3', 'c_std=c17'])
-subdir('src')
 
 description = 'Linux user space driver for Logitech MX Master 3 mice.'
-dependencies = [dependency('libudev'), dependency('json-c'), dependency('threads')]
+
+subdir('src')
+subdir('doc')
+
+dependencies = [dependency('threads'), dependency('libudev'), dependency('json-c'), dependency('libevdev')]
 
 add_project_arguments('-DPROJECT_NAME="' + meson.project_name() + '"', language: 'c')
 add_project_arguments('-DPROJECT_LIBRARY_NAME="lib' + meson.project_name() + '"', language: 'c')

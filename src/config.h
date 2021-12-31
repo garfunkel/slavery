@@ -58,9 +58,6 @@ typedef struct array_list array_list;
 
 typedef struct slavery_config_button_t {
 	int x;
-	/*char *button_name;
-	ssize_t num_actions;
-	slavery_config_action_t **actions;*/
 } slavery_config_button_t;
 
 typedef struct slavery_config_entry_t {

@@ -1,3 +1,8 @@
+/**
+ * @file
+ * @brief Main libslavery header.
+ */
+
 #pragma once
 
 #include "utils.h"
@@ -14,6 +19,13 @@ typedef struct slavery_listener_t slavery_listener_t;
 int slavery_scan_receivers(slavery_receiver_t **receivers[]);
 
 void slavery_receiver_array_free(slavery_receiver_t *receivers[], const ssize_t num_receivers);
+
+/**
+ * @brief Prints to stdout a textual representation of a receiver array.
+ *
+ * @param receivers Receiver array to print.
+ * @param num_receivers Size of receiver array.
+ */
 void slavery_receiver_array_print(const slavery_receiver_t *receivers[], const ssize_t num_receivers);
 int slavery_receiver_free(slavery_receiver_t *receiver);
 void slavery_receiver_print(const slavery_receiver_t *receiver);

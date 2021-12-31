@@ -19,6 +19,10 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
+#if __GLIBC_MINOR__ < 32
+	#include <ctype.h>
+#endif
+
 #define pthread_callback_t void *(*)(void *)
 
 const uint16_t SLAVERY_USB_VENDOR_ID_LOGITECH = 0x046d;
@@ -35,8 +39,6 @@ static void slavery_receiver_listener_signal_handler(int signum) {
 #if __GLIBC_MINOR__ >= 32
 	char *abbr = (char *)sigabbrev_np(signum);
 #else
-	#include <ctype.h>
-
 	char *abbr = strdup(sys_siglist[signum]);
 
 	for (size_t i = 0; i < strlen(abbr); i++) {

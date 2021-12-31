@@ -23,14 +23,26 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
       - name: Install Dependencies
         run: sudo apt-get install libudev-dev libjson-c-dev libevdev-dev
 
-      - name: Meson Build
+      - name: Build & Test
         uses: BSFishy/meson-build@v1.0.3
         with:
           action: test
           meson-version: 0.60.0
 
+      - name: Build Documentation
+        uses: BSFishy/meson-build@v1.0.3
+        with:
+          action: doc
+          meson-version: 0.60.0
+
+      - name: Deploy Documentation
+              uses: JamesIves/github-pages-deploy-action@4.1.7
+              with:
+                branch: gh-pages
+                folder: build/doc/html

@@ -1,3 +1,13 @@
+/**
+ * @file
+ * @brief Implementation of various utility functions and constants.
+ *
+ * @version $(PROJECT_VERSION)
+ * @authors $(PROJECT_AUTHORS)
+ * @copyright $(PROJECT_COPYRIGHT)
+ * @license $(PROJECT_LICENSE)
+ */
+
 #define _GNU_SOURCE
 
 #include "utils.h"
@@ -10,10 +20,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-const char *ERROR_LEVEL_DEBUG = "DEBUG";
-const char *ERROR_LEVEL_INFO = "INFO";
-const char *ERROR_LEVEL_WARNING = "WARNING";
-const char *ERROR_LEVEL_ERROR = "ERROR";
+const size_t SLAVERY_PACKET_LENGTH_CONTROL_SHORT = 7;
+const size_t SLAVERY_PACKET_LENGTH_CONTROL_LONG = 20;
+const size_t SLAVERY_PACKET_LENGTH_EVENT = 15;
+const size_t SLAVERY_PACKET_LENGTH_MAX = 32;
+
+const uint8_t SLAVERY_SOFTWARE_ID = 0x01;
+
+const char *LOG_LEVEL_DEBUG = "DEBUG";
+const char *LOG_LEVEL_INFO = "INFO";
+const char *LOG_LEVEL_WARNING = "WARNING";
+const char *LOG_LEVEL_ERROR = "ERROR";
 
 const char *bytes_to_hex(const uint8_t bytes[], const size_t num_bytes, char *restrict hex) {
 	if (hex == NULL) {

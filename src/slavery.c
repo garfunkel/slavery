@@ -1,3 +1,13 @@
+/**
+ * @file
+ * @brief Reference implementation of libslavery.
+ *
+ * @version $(PROJECT_VERSION)
+ * @authors $(PROJECT_AUTHORS)
+ * @copyright $(PROJECT_COPYRIGHT)
+ * @license $(PROJECT_LICENSE)
+ */
+
 #include "libslavery.h"
 
 #include <stdio.h>
@@ -7,10 +17,8 @@ int main() {
 	slavery_receiver_t **receivers;
 	int num_receivers = slavery_scan_receivers(&receivers);
 
-	slavery_receiver_array_print((const slavery_receiver_t **)receivers, num_receivers);
-
 	for (int i = 0; i < num_receivers; i++) {
-		int num_devices = slavery_receiver_get_devices(receivers[i]);
+		int num_devices = slavery_receiver_scan_devices(receivers[i]);
 
 		for (int i = 0; i < num_devices; i++) {
 			// slavery_device_set_config(device_entry->device, config);

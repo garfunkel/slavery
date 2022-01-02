@@ -261,7 +261,7 @@ TAB_SIZE               = 4
 # with the commands \{ and \} for these it is advised to use the version @{ and
 # @} or use a double escape (\\{ and \\})
 
-ALIASES                =
+ALIASES                = "license=@par License:^^"
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C sources
 # only. Doxygen will then generate output that is more tailored for C. For
@@ -871,7 +871,7 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = "$(MESON_SOURCE_ROOT)/src" \
+INPUT                  = "$(MESON_SOURCE_ROOT)/src/libslavery.h" \
                          "$(MESON_SOURCE_ROOT)/README.md"
 
 # This tag can be used to specify the character encoding of the source files

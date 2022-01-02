@@ -1,3 +1,13 @@
+/**
+ * @file
+ * @brief Configuration file implementation.
+ *
+ * @version $(PROJECT_VERSION)
+ * @authors $(PROJECT_AUTHORS)
+ * @copyright $(PROJECT_COPYRIGHT)
+ * @license $(PROJECT_LICENSE)
+ */
+
 #define _POSIX_C_SOURCE 200809L
 
 #include "config.h"
@@ -305,7 +315,7 @@ slavery_config_entry_t *slavery_config_entry_parse(const char *name, const json_
 	return config_entry;
 }
 
-slavery_config_t *slavery_config_read(const char *path) {
+slavery_config_t *slavery_config_new(const char *path) {
 	log_debug("parsing config file %s", path);
 
 	int fd;
@@ -351,8 +361,6 @@ slavery_config_t *slavery_config_read(const char *path) {
 	return config;
 }
 
-void slavery_config_print(const slavery_config_t *config) {
-	printf("num entries: %ld\n", config->num_entries);
-
-	for (size_t entry_index = 0; entry_index < config->num_entries; entry_index++) {}
+void slavery_config_free(slavery_config_t *config) {
+	UNUSED(config);
 }

@@ -1,6 +1,7 @@
 project('slavery', 'c',	license: 'MIT', version: '0.1',	default_options: ['warning_level=3', 'c_std=c17'])
 
 description = 'Linux user space driver for Logitech MX Master 3 mice.'
+authors = ['Simon Allen']
 
 subdir('src')
 subdir('doc')
@@ -16,9 +17,15 @@ if get_option('buildtype').startswith('debug')
 	add_project_arguments('-DDEBUG', language: 'c')
 endif
 
-lib_libslavery = library(meson.project_name(), src_libslavery, dependencies: dependencies)
+lib_libslavery = library(meson.project_name(), src_libslavery, dependencies: dependencies, install: true)
 exe_slavery = executable(meson.project_name(), src_slavery, link_with: lib_libslavery, install: true)
 test_config = executable('test_config', 'tests/test_config.c', 
 	link_with: lib_libslavery, include_directories: 'src')
+
+pkg = import('pkgconfig')
+pkg.generate(lib_libslavery,
+             description: description,
+             subdirs: 'libslavery',
+			 url: 'https://github.com/garfunkel/slavery')
 
 test('test_config', test_config, workdir: meson.project_source_root() / 'tests', args: 'config.json')

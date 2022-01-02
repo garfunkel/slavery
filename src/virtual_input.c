@@ -1,3 +1,13 @@
+/**
+ * @file
+ * @brief Implementation of a virtual input device, used to allow for button remapping.
+ *
+ * @version $(PROJECT_VERSION)
+ * @authors $(PROJECT_AUTHORS)
+ * @copyright $(PROJECT_COPYRIGHT)
+ * @license $(PROJECT_LICENSE)
+ */
+
 #include <libevdev/libevdev-uinput.h>
 #include <libevdev/libevdev.h>
 #include <stdio.h>

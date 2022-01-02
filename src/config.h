@@ -1,3 +1,13 @@
+/**
+ * @file
+ * @brief Configuration file functions and types.
+ *
+ * @version $(PROJECT_VERSION)
+ * @authors $(PROJECT_AUTHORS)
+ * @copyright $(PROJECT_COPYRIGHT)
+ * @license $(PROJECT_LICENSE)
+ */
+
 #pragma once
 
 #include <stdbool.h>
@@ -83,4 +93,6 @@ typedef struct slavery_config_t {
 	slavery_config_entry_t **entries;
 } slavery_config_t;
 
+slavery_config_t *slavery_config_new(const char *path);
+void slavery_config_free(slavery_config_t *config);
 slavery_config_entry_t *slavery_config_entry_parse(const char *name, const json_object *obj);

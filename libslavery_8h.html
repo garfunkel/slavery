@@ -115,7 +115,6 @@ $(document).ready(function(){initNavTree('libslavery_8h.html',''); initResizable
 <p>Main libslavery header.  
 <a href="#details">More...</a></p>
 <div class="textblock"><code>#include &quot;utils.h&quot;</code><br />
-<code>#include &lt;stdint.h&gt;</code><br />
 <code>#include &lt;sys/types.h&gt;</code><br />
 </div>
 <p><a href="libslavery_8h_source.html">Go to the source code of this file.</a></p>
@@ -123,76 +122,227 @@ $(document).ready(function(){initNavTree('libslavery_8h.html',''); initResizable
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
 <tr class="memitem:aa9485002c85f443dc1afab306e0c2c82"><td class="memItemLeft" align="right" valign="top"><a id="aa9485002c85f443dc1afab306e0c2c82"></a>
-typedef struct slavery_receiver_t&#160;</td><td class="memItemRight" valign="bottom"><b>slavery_receiver_t</b></td></tr>
+typedef struct <a class="el" href="libslavery_8h.html#aa9485002c85f443dc1afab306e0c2c82">slavery_receiver_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libslavery_8h.html#aa9485002c85f443dc1afab306e0c2c82">slavery_receiver_t</a></td></tr>
+<tr class="memdesc:aa9485002c85f443dc1afab306e0c2c82"><td class="mdescLeft">&#160;</td><td class="mdescRight">Opaque type for a Logitech unifying receiver. <br /></td></tr>
 <tr class="separator:aa9485002c85f443dc1afab306e0c2c82"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a96628013a28ddc8c7db405954b5e8bf8"><td class="memItemLeft" align="right" valign="top"><a id="a96628013a28ddc8c7db405954b5e8bf8"></a>
-typedef struct <a class="el" href="structslavery__config__t.html">slavery_config_t</a>&#160;</td><td class="memItemRight" valign="bottom"><b>slavery_config_t</b></td></tr>
+typedef struct <a class="el" href="libslavery_8h.html#a96628013a28ddc8c7db405954b5e8bf8">slavery_config_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libslavery_8h.html#a96628013a28ddc8c7db405954b5e8bf8">slavery_config_t</a></td></tr>
+<tr class="memdesc:a96628013a28ddc8c7db405954b5e8bf8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Opaque type for a slavery configuration. <br /></td></tr>
 <tr class="separator:a96628013a28ddc8c7db405954b5e8bf8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6ee47807a1d4e3df0ee41e9e55be680b"><td class="memItemLeft" align="right" valign="top"><a id="a6ee47807a1d4e3df0ee41e9e55be680b"></a>
-typedef struct slavery_device_t&#160;</td><td class="memItemRight" valign="bottom"><b>slavery_device_t</b></td></tr>
+typedef struct <a class="el" href="libslavery_8h.html#a6ee47807a1d4e3df0ee41e9e55be680b">slavery_device_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libslavery_8h.html#a6ee47807a1d4e3df0ee41e9e55be680b">slavery_device_t</a></td></tr>
+<tr class="memdesc:a6ee47807a1d4e3df0ee41e9e55be680b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Opaque type for compatible devices connected to a receiver. <br /></td></tr>
 <tr class="separator:a6ee47807a1d4e3df0ee41e9e55be680b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9ca864f68f9c11e93732dea476990c17"><td class="memItemLeft" align="right" valign="top"><a id="a9ca864f68f9c11e93732dea476990c17"></a>
-typedef struct slavery_button_t&#160;</td><td class="memItemRight" valign="bottom"><b>slavery_button_t</b></td></tr>
+typedef struct <a class="el" href="libslavery_8h.html#a9ca864f68f9c11e93732dea476990c17">slavery_button_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libslavery_8h.html#a9ca864f68f9c11e93732dea476990c17">slavery_button_t</a></td></tr>
+<tr class="memdesc:a9ca864f68f9c11e93732dea476990c17"><td class="mdescLeft">&#160;</td><td class="mdescRight">Opaque type for a device button. <br /></td></tr>
 <tr class="separator:a9ca864f68f9c11e93732dea476990c17"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4eed26827a0e717437ad3ae03dad261b"><td class="memItemLeft" align="right" valign="top"><a id="a4eed26827a0e717437ad3ae03dad261b"></a>
-typedef struct slavery_listener_t&#160;</td><td class="memItemRight" valign="bottom"><b>slavery_listener_t</b></td></tr>
-<tr class="separator:a4eed26827a0e717437ad3ae03dad261b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a463db749976aaf3f781efd9f876ac87c"><td class="memItemLeft" align="right" valign="top"><a id="a463db749976aaf3f781efd9f876ac87c"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>slavery_scan_receivers</b> (slavery_receiver_t **receivers[])</td></tr>
+<tr class="memitem:a463db749976aaf3f781efd9f876ac87c"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libslavery_8h.html#a463db749976aaf3f781efd9f876ac87c">slavery_scan_receivers</a> (<a class="el" href="libslavery_8h.html#aa9485002c85f443dc1afab306e0c2c82">slavery_receiver_t</a> **receivers[])</td></tr>
+<tr class="memdesc:a463db749976aaf3f781efd9f876ac87c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scans for receivers currently connected.  <a href="libslavery_8h.html#a463db749976aaf3f781efd9f876ac87c">More...</a><br /></td></tr>
 <tr class="separator:a463db749976aaf3f781efd9f876ac87c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac5ad4f9444814f23a0f8d373485ad791"><td class="memItemLeft" align="right" valign="top"><a id="ac5ad4f9444814f23a0f8d373485ad791"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>slavery_receiver_array_free</b> (slavery_receiver_t *receivers[], const ssize_t num_receivers)</td></tr>
+<tr class="memitem:ac5ad4f9444814f23a0f8d373485ad791"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libslavery_8h.html#ac5ad4f9444814f23a0f8d373485ad791">slavery_receiver_array_free</a> (<a class="el" href="libslavery_8h.html#aa9485002c85f443dc1afab306e0c2c82">slavery_receiver_t</a> *receivers[], const ssize_t num_receivers)</td></tr>
+<tr class="memdesc:ac5ad4f9444814f23a0f8d373485ad791"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frees all memory created under the context of an array of receivers.  <a href="libslavery_8h.html#ac5ad4f9444814f23a0f8d373485ad791">More...</a><br /></td></tr>
 <tr class="separator:ac5ad4f9444814f23a0f8d373485ad791"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a38e5cfa240b1317f4c72be444d27f637"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libslavery_8h.html#a38e5cfa240b1317f4c72be444d27f637">slavery_receiver_array_print</a> (const slavery_receiver_t *receivers[], const ssize_t num_receivers)</td></tr>
-<tr class="memdesc:a38e5cfa240b1317f4c72be444d27f637"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prints to stdout a textual representation of a receiver array.  <a href="libslavery_8h.html#a38e5cfa240b1317f4c72be444d27f637">More...</a><br /></td></tr>
-<tr class="separator:a38e5cfa240b1317f4c72be444d27f637"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a33fc06aaa2ed546cd6ec327b54b1389f"><td class="memItemLeft" align="right" valign="top"><a id="a33fc06aaa2ed546cd6ec327b54b1389f"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>slavery_receiver_free</b> (slavery_receiver_t *receiver)</td></tr>
+<tr class="memitem:a33fc06aaa2ed546cd6ec327b54b1389f"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libslavery_8h.html#a33fc06aaa2ed546cd6ec327b54b1389f">slavery_receiver_free</a> (<a class="el" href="libslavery_8h.html#aa9485002c85f443dc1afab306e0c2c82">slavery_receiver_t</a> *receiver)</td></tr>
+<tr class="memdesc:a33fc06aaa2ed546cd6ec327b54b1389f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frees all memory created under the context of the receiver.  <a href="libslavery_8h.html#a33fc06aaa2ed546cd6ec327b54b1389f">More...</a><br /></td></tr>
 <tr class="separator:a33fc06aaa2ed546cd6ec327b54b1389f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8cce629dbc7a8752cb0e9837d30f19e0"><td class="memItemLeft" align="right" valign="top"><a id="a8cce629dbc7a8752cb0e9837d30f19e0"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>slavery_receiver_print</b> (const slavery_receiver_t *receiver)</td></tr>
-<tr class="separator:a8cce629dbc7a8752cb0e9837d30f19e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af29edc301e0348176472db7edc45baea"><td class="memItemLeft" align="right" valign="top"><a id="af29edc301e0348176472db7edc45baea"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>slavery_receiver_get_devices</b> (slavery_receiver_t *receiver)</td></tr>
-<tr class="separator:af29edc301e0348176472db7edc45baea"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9718737d58fd67ea5d04831259bf3ed8"><td class="memItemLeft" align="right" valign="top"><a id="a9718737d58fd67ea5d04831259bf3ed8"></a>
-<a class="el" href="structslavery__config__t.html">slavery_config_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>slavery_config_read</b> (const char *path)</td></tr>
-<tr class="separator:a9718737d58fd67ea5d04831259bf3ed8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a35de69f59bf5f373dd5c3d3ded7c1cda"><td class="memItemLeft" align="right" valign="top"><a id="a35de69f59bf5f373dd5c3d3ded7c1cda"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>slavery_config_print</b> (const <a class="el" href="structslavery__config__t.html">slavery_config_t</a> *config)</td></tr>
-<tr class="separator:a35de69f59bf5f373dd5c3d3ded7c1cda"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7b4b37e07fa9f3b53e0174b45747758f"><td class="memItemLeft" align="right" valign="top"><a id="a7b4b37e07fa9f3b53e0174b45747758f"></a>
-slavery_device_t *&#160;</td><td class="memItemRight" valign="bottom"><b>slavery_device_from_receiver</b> (slavery_receiver_t *receiver, const uint8_t device_index)</td></tr>
-<tr class="separator:a7b4b37e07fa9f3b53e0174b45747758f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad71447f43f68af12c8e6bed604fba8eb"><td class="memItemLeft" align="right" valign="top"><a id="ad71447f43f68af12c8e6bed604fba8eb"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>slavery_device_array_free</b> (slavery_device_t *devices[], const ssize_t num_devices)</td></tr>
+<tr class="memitem:a9e02acc310d01b979615b3e1094d5894"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libslavery_8h.html#a9e02acc310d01b979615b3e1094d5894">slavery_receiver_scan_devices</a> (<a class="el" href="libslavery_8h.html#aa9485002c85f443dc1afab306e0c2c82">slavery_receiver_t</a> *receiver)</td></tr>
+<tr class="memdesc:a9e02acc310d01b979615b3e1094d5894"><td class="mdescLeft">&#160;</td><td class="mdescRight">Detect compatibile devices connected to the given receiver.  <a href="libslavery_8h.html#a9e02acc310d01b979615b3e1094d5894">More...</a><br /></td></tr>
+<tr class="separator:a9e02acc310d01b979615b3e1094d5894"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5afc7e18c9e3930104c2cd5c618f087d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="libslavery_8h.html#a6ee47807a1d4e3df0ee41e9e55be680b">slavery_device_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libslavery_8h.html#a5afc7e18c9e3930104c2cd5c618f087d">slavery_receiver_get_device</a> (<a class="el" href="libslavery_8h.html#aa9485002c85f443dc1afab306e0c2c82">slavery_receiver_t</a> *receiver, const uint8_t device_index)</td></tr>
+<tr class="memdesc:a5afc7e18c9e3930104c2cd5c618f087d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the device at the given index from the receiver.  <a href="libslavery_8h.html#a5afc7e18c9e3930104c2cd5c618f087d">More...</a><br /></td></tr>
+<tr class="separator:a5afc7e18c9e3930104c2cd5c618f087d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a76792115a8bbf21f26c9243f2a208d2f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="libslavery_8h.html#a96628013a28ddc8c7db405954b5e8bf8">slavery_config_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libslavery_8h.html#a76792115a8bbf21f26c9243f2a208d2f">slavery_config_new</a> (const char *path)</td></tr>
+<tr class="memdesc:a76792115a8bbf21f26c9243f2a208d2f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reads config file from a file path.  <a href="libslavery_8h.html#a76792115a8bbf21f26c9243f2a208d2f">More...</a><br /></td></tr>
+<tr class="separator:a76792115a8bbf21f26c9243f2a208d2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab1694867c6556cb96a5000e869e41346"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libslavery_8h.html#ab1694867c6556cb96a5000e869e41346">slavery_config_free</a> (<a class="el" href="libslavery_8h.html#a96628013a28ddc8c7db405954b5e8bf8">slavery_config_t</a> *config)</td></tr>
+<tr class="memdesc:ab1694867c6556cb96a5000e869e41346"><td class="mdescLeft">&#160;</td><td class="mdescRight">Free config data.  <a href="libslavery_8h.html#ab1694867c6556cb96a5000e869e41346">More...</a><br /></td></tr>
+<tr class="separator:ab1694867c6556cb96a5000e869e41346"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad71447f43f68af12c8e6bed604fba8eb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libslavery_8h.html#ad71447f43f68af12c8e6bed604fba8eb">slavery_device_array_free</a> (<a class="el" href="libslavery_8h.html#a6ee47807a1d4e3df0ee41e9e55be680b">slavery_device_t</a> *devices[], const ssize_t num_devices)</td></tr>
+<tr class="memdesc:ad71447f43f68af12c8e6bed604fba8eb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frees memory for an array of devices.  <a href="libslavery_8h.html#ad71447f43f68af12c8e6bed604fba8eb">More...</a><br /></td></tr>
 <tr class="separator:ad71447f43f68af12c8e6bed604fba8eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac3767dae1fc91b99f7463424e129c291"><td class="memItemLeft" align="right" valign="top"><a id="ac3767dae1fc91b99f7463424e129c291"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>slavery_device_set_config</b> (slavery_device_t *device, const <a class="el" href="structslavery__config__t.html">slavery_config_t</a> *config)</td></tr>
+<tr class="memitem:ac3767dae1fc91b99f7463424e129c291"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libslavery_8h.html#ac3767dae1fc91b99f7463424e129c291">slavery_device_set_config</a> (<a class="el" href="libslavery_8h.html#a6ee47807a1d4e3df0ee41e9e55be680b">slavery_device_t</a> *device, const <a class="el" href="libslavery_8h.html#a96628013a28ddc8c7db405954b5e8bf8">slavery_config_t</a> *config)</td></tr>
+<tr class="memdesc:ac3767dae1fc91b99f7463424e129c291"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set device config.  <a href="libslavery_8h.html#ac3767dae1fc91b99f7463424e129c291">More...</a><br /></td></tr>
 <tr class="separator:ac3767dae1fc91b99f7463424e129c291"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a60a8ea457a1533eee9a64b4aa62f6d2d"><td class="memItemLeft" align="right" valign="top"><a id="a60a8ea457a1533eee9a64b4aa62f6d2d"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>slavery_device_print</b> (const slavery_device_t *device)</td></tr>
-<tr class="separator:a60a8ea457a1533eee9a64b4aa62f6d2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a628555acda622710ce678dbc19bf60aa"><td class="memItemLeft" align="right" valign="top"><a id="a628555acda622710ce678dbc19bf60aa"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>slavery_device_free</b> (slavery_device_t *device)</td></tr>
+<tr class="memitem:a628555acda622710ce678dbc19bf60aa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libslavery_8h.html#a628555acda622710ce678dbc19bf60aa">slavery_device_free</a> (<a class="el" href="libslavery_8h.html#a6ee47807a1d4e3df0ee41e9e55be680b">slavery_device_t</a> *device)</td></tr>
+<tr class="memdesc:a628555acda622710ce678dbc19bf60aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frees all memory for a device.  <a href="libslavery_8h.html#a628555acda622710ce678dbc19bf60aa">More...</a><br /></td></tr>
 <tr class="separator:a628555acda622710ce678dbc19bf60aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Main libslavery header. </p>
+<dl class="section version"><dt>Version</dt><dd>0.1 </dd></dl>
+<dl class="section author"><dt>Authors</dt><dd>Simon Allen </dd></dl>
+<dl class="section copyright"><dt>Copyright</dt><dd>Copyright (c) 2022 Simon Allen </dd></dl>
+<dl class="section user"><dt>License:</dt><dd>MIT</dd></dl>
+<p>libslavery implements Logitech's HID++ protocol to allow for working with devices such as the MX Master 3 mouse. libslavery provides functions for getting/setting metadata, battery state information, and remapping buttons. </p>
 </div><h2 class="groupheader">Function Documentation</h2>
-<a id="a38e5cfa240b1317f4c72be444d27f637"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a38e5cfa240b1317f4c72be444d27f637">&#9670;&nbsp;</a></span>slavery_receiver_array_print()</h2>
+<a id="ab1694867c6556cb96a5000e869e41346"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab1694867c6556cb96a5000e869e41346">&#9670;&nbsp;</a></span>slavery_config_free()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void slavery_receiver_array_print </td>
+          <td class="memname">void slavery_config_free </td>
           <td>(</td>
-          <td class="paramtype">const slavery_receiver_t *&#160;</td>
+          <td class="paramtype"><a class="el" href="libslavery_8h.html#a96628013a28ddc8c7db405954b5e8bf8">slavery_config_t</a> *&#160;</td>
+          <td class="paramname"><em>config</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Free config data. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">config</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a76792115a8bbf21f26c9243f2a208d2f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a76792115a8bbf21f26c9243f2a208d2f">&#9670;&nbsp;</a></span>slavery_config_new()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="libslavery_8h.html#a96628013a28ddc8c7db405954b5e8bf8">slavery_config_t</a>* slavery_config_new </td>
+          <td>(</td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>path</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Reads config file from a file path. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">path</td><td>Config file path. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>slavery_config_t* Config object. </dd></dl>
+
+</div>
+</div>
+<a id="ad71447f43f68af12c8e6bed604fba8eb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad71447f43f68af12c8e6bed604fba8eb">&#9670;&nbsp;</a></span>slavery_device_array_free()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void slavery_device_array_free </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="libslavery_8h.html#a6ee47807a1d4e3df0ee41e9e55be680b">slavery_device_t</a> *&#160;</td>
+          <td class="paramname"><em>devices</em>[], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const ssize_t&#160;</td>
+          <td class="paramname"><em>num_devices</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Frees memory for an array of devices. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">devices</td><td>Array of devices to free. </td></tr>
+    <tr><td class="paramname">num_devices</td><td>Size of device array. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a628555acda622710ce678dbc19bf60aa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a628555acda622710ce678dbc19bf60aa">&#9670;&nbsp;</a></span>slavery_device_free()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void slavery_device_free </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="libslavery_8h.html#a6ee47807a1d4e3df0ee41e9e55be680b">slavery_device_t</a> *&#160;</td>
+          <td class="paramname"><em>device</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Frees all memory for a device. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">device</td><td>Device to free. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ac3767dae1fc91b99f7463424e129c291"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac3767dae1fc91b99f7463424e129c291">&#9670;&nbsp;</a></span>slavery_device_set_config()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int slavery_device_set_config </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="libslavery_8h.html#a6ee47807a1d4e3df0ee41e9e55be680b">slavery_device_t</a> *&#160;</td>
+          <td class="paramname"><em>device</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="libslavery_8h.html#a96628013a28ddc8c7db405954b5e8bf8">slavery_config_t</a> *&#160;</td>
+          <td class="paramname"><em>config</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set device config. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">device</td><td>Device to apply config to. </td></tr>
+    <tr><td class="paramname">config</td><td>Config to apply. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>int 0 on success, &lt; 0 on error. </dd></dl>
+
+</div>
+</div>
+<a id="ac5ad4f9444814f23a0f8d373485ad791"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac5ad4f9444814f23a0f8d373485ad791">&#9670;&nbsp;</a></span>slavery_receiver_array_free()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void slavery_receiver_array_free </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="libslavery_8h.html#aa9485002c85f443dc1afab306e0c2c82">slavery_receiver_t</a> *&#160;</td>
           <td class="paramname"><em>receivers</em>[], </td>
         </tr>
         <tr>
@@ -209,14 +359,133 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>slavery_device_free</
       </table>
 </div><div class="memdoc">
 
-<p>Prints to stdout a textual representation of a receiver array. </p>
+<p>Frees all memory created under the context of an array of receivers. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">receivers</td><td>Receiver array to print. </td></tr>
-    <tr><td class="paramname">num_receivers</td><td>Size of receiver array. </td></tr>
+    <tr><td class="paramname">receivers</td><td>Receiver array to free. </td></tr>
+    <tr><td class="paramname">num_receivers</td><td>Number of receivers in array. </td></tr>
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a id="a33fc06aaa2ed546cd6ec327b54b1389f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a33fc06aaa2ed546cd6ec327b54b1389f">&#9670;&nbsp;</a></span>slavery_receiver_free()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int slavery_receiver_free </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="libslavery_8h.html#aa9485002c85f443dc1afab306e0c2c82">slavery_receiver_t</a> *&#160;</td>
+          <td class="paramname"><em>receiver</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Frees all memory created under the context of the receiver. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">receiver</td><td>Receiver to free. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>int 0 on success, &lt; 0 on error. </dd></dl>
+
+</div>
+</div>
+<a id="a5afc7e18c9e3930104c2cd5c618f087d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5afc7e18c9e3930104c2cd5c618f087d">&#9670;&nbsp;</a></span>slavery_receiver_get_device()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="libslavery_8h.html#a6ee47807a1d4e3df0ee41e9e55be680b">slavery_device_t</a>* slavery_receiver_get_device </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="libslavery_8h.html#aa9485002c85f443dc1afab306e0c2c82">slavery_receiver_t</a> *&#160;</td>
+          <td class="paramname"><em>receiver</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const uint8_t&#160;</td>
+          <td class="paramname"><em>device_index</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get the device at the given index from the receiver. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">receiver</td><td>Receiver devices are attached to. </td></tr>
+    <tr><td class="paramname">device_index</td><td>Index of the device attached. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>slavery_device_t* Device at the given index, or NULL if no device/error. </dd></dl>
+
+</div>
+</div>
+<a id="a9e02acc310d01b979615b3e1094d5894"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9e02acc310d01b979615b3e1094d5894">&#9670;&nbsp;</a></span>slavery_receiver_scan_devices()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int slavery_receiver_scan_devices </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="libslavery_8h.html#aa9485002c85f443dc1afab306e0c2c82">slavery_receiver_t</a> *&#160;</td>
+          <td class="paramname"><em>receiver</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Detect compatibile devices connected to the given receiver. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">receiver</td><td>Receiver to get devices for. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>int 0 on success, &lt; 0 on error. </dd></dl>
+
+</div>
+</div>
+<a id="a463db749976aaf3f781efd9f876ac87c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a463db749976aaf3f781efd9f876ac87c">&#9670;&nbsp;</a></span>slavery_scan_receivers()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int slavery_scan_receivers </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="libslavery_8h.html#aa9485002c85f443dc1afab306e0c2c82">slavery_receiver_t</a> **&#160;</td>
+          <td class="paramname"><em>receivers</em>[]</td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Scans for receivers currently connected. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">receivers</td><td>The receiver array to fill. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>int The number of receivers found. </dd></dl>
 
 </div>
 </div>

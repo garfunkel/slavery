@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['slavery_11',['slavery',['../index.html',1,'']]]
+  ['slavery_31',['slavery',['../index.html',1,'']]]
 ];

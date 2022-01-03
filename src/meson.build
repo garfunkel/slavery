@@ -3,7 +3,9 @@ src_libslavery = files('config.c',
 					   'virtual_input.c',
 					   'receiver.c',
 					   'device.c',
-					   'event.c')
+					   'event.c',
+					   'monitor.c',
+					   'libslavery.c')
 src_slavery = files('slavery.c')
 
 install_headers('libslavery.h', subdir: 'libslavery')

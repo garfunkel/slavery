@@ -19,6 +19,8 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+typedef struct slavery_t slavery_t;
+
 /**
  * @brief Opaque type for a Logitech unifying receiver.
  */
@@ -40,12 +42,22 @@ typedef struct slavery_device_t slavery_device_t;
 typedef struct slavery_button_t slavery_button_t;
 
 /**
+ * @brief Opaque type for a monitor watching over udev devices.
+ */
+typedef struct slavery_monitor_t slavery_monitor_t;
+
+slavery_t *slavery_new();
+int slavery_free(slavery_t *slavery);
+
+/**
  * @brief Scans for receivers currently connected.
  *
  * @param receivers The receiver array to fill.
  * @return int The number of receivers found.
  */
-int slavery_scan_receivers(slavery_receiver_t **receivers[]);
+ssize_t slavery_scan_receivers(slavery_t *slavery);
+
+slavery_receiver_t *slavery_get_receiver(slavery_t *slavery, size_t receiver_index);
 
 /**
  * @brief Frees all memory created under the context of an array of receivers.
@@ -69,7 +81,7 @@ int slavery_receiver_free(slavery_receiver_t *receiver);
  * @param receiver Receiver to get devices for.
  * @return int 0 on success, < 0 on error.
  */
-int slavery_receiver_scan_devices(slavery_receiver_t *receiver);
+ssize_t slavery_receiver_scan_devices(slavery_receiver_t *receiver);
 
 /**
  * @brief Get the device at the given index from the receiver.

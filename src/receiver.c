@@ -20,16 +20,12 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <libudev.h>
 #include <linux/hidraw.h>
-#include <signal.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-
-#define pthread_callback_t void *(*)(void *)
 
 const uint16_t SLAVERY_USB_VENDOR_ID_LOGITECH = 0x046d;
 const uint16_t SLAVERY_USB_PRODUCT_ID_UNIFYING_RECEIVER = 0xc52b;
@@ -49,16 +45,20 @@ void slavery_receiver_array_free(slavery_receiver_t *receivers[], const ssize_t 
 }
 
 int slavery_receiver_free(slavery_receiver_t *receiver) {
-	log_debug("freeing receiver at %p", receiver);
-	log_debug("sending SIGINT to listener thread and joining...");
+	log_debug("freeing receiver %s", receiver->devnode);
+	log_debug("stopping listener thread");
 
-	if (pthread_kill(receiver->listener_thread, SIGINT) != 0) {
-		log_warning_errno(SLAVERY_ERROR_OS, "pthread_kill()");
+	if ((errno = pthread_cancel(receiver->listener_thread)) != 0) {
+		if (errno == ESRCH) {
+			log_debug("listener thread has already finished");
+		} else {
+			log_warning_errno(SLAVERY_ERROR_OS, "pthread_cancel()");
 
-		return -1;
+			return -1;
+		}
 	}
 
-	if (pthread_join(receiver->listener_thread, NULL) != 0) {
+	if ((errno = pthread_join(receiver->listener_thread, NULL)) != 0) {
 		log_warning_errno(SLAVERY_ERROR_OS, "pthread_join()");
 
 		return -1;
@@ -94,90 +94,7 @@ int slavery_receiver_free(slavery_receiver_t *receiver) {
 	return 0;
 }
 
-int slavery_scan_receivers(slavery_receiver_t **receivers[]) {
-	log_debug("scanning for receivers...");
-
-	struct udev *udev;
-	struct udev_enumerate *enumerate;
-	struct udev_list_entry *device_list, *device_entry;
-	int num_receivers = 0;
-	*receivers = NULL;
-
-	if ((udev = udev_new()) == NULL) {
-		log_warning(SLAVERY_ERROR_IO, "udev_new() failed");
-
-		return -1;
-	}
-
-	if ((enumerate = udev_enumerate_new(udev)) == NULL) {
-		log_warning(SLAVERY_ERROR_IO, "udev_enumerate_new() failed");
-
-		udev_unref(udev);
-
-		return -1;
-	}
-
-	if (udev_enumerate_add_match_subsystem(enumerate, "hidraw") < 0) {
-		log_warning(SLAVERY_ERROR_IO, "udev_enumerate_add_match_subsystem() failed");
-
-		udev_enumerate_unref(enumerate);
-		udev_unref(udev);
-
-		return -1;
-	}
-
-	if (udev_enumerate_scan_devices(enumerate) < 0) {
-		log_warning(SLAVERY_ERROR_IO, "udev_enumerate_scan_devices() failed");
-
-		udev_enumerate_unref(enumerate);
-		udev_unref(udev);
-
-		return -1;
-	}
-
-	device_list = udev_enumerate_get_list_entry(enumerate);
-
-	udev_list_entry_foreach(device_entry, device_list) {
-		const char *sys_path = udev_list_entry_get_name(device_entry);
-		struct udev_device *device = udev_device_new_from_syspath(udev, sys_path);
-		const char *devnode = udev_device_get_devnode(device);
-
-		log_debug("found devnode on %s, checking if it is a receiver", devnode);
-
-		slavery_receiver_t *receiver = slavery_receiver_from_devnode(devnode);
-
-		if (receiver == NULL) {
-			log_debug("failed to create receiver from devnode %s, ignoring devnode", devnode);
-
-			udev_device_unref(device);
-
-			continue;
-		}
-
-		if (slavery_receiver_get_report_descriptor(receiver) < 0) {
-			log_warning(SLAVERY_ERROR_IO, "failed to get report descriptor");
-
-			slavery_receiver_free(receiver);
-			udev_device_unref(device);
-
-			continue;
-		}
-
-		*receivers = realloc(*receivers, sizeof(slavery_receiver_t) * (num_receivers + 1));
-		*receivers[num_receivers++] = receiver;
-
-		udev_device_unref(device);
-	}
-
-	udev_enumerate_unref(enumerate);
-	udev_unref(udev);
-
-	log_debug("found %u receivers", num_receivers);
-
-	return num_receivers;
-}
-
-int slavery_receiver_scan_devices(slavery_receiver_t *receiver) {
+ssize_t slavery_receiver_scan_devices(slavery_receiver_t *receiver) {
 	log_debug("getting devices connected to receiver %s...", receiver->devnode);
 
 	receiver->num_devices = 0;
@@ -290,30 +207,6 @@ slavery_device_t *slavery_receiver_get_device(slavery_receiver_t *receiver, cons
 	return device;
 }
 
-static void slavery_receiver_listener_signal_handler(int signum) {
-#if __GLIBC_MINOR__ >= 32
-	char *abbr = (char *)sigabbrev_np(signum);
-#else
-	char *abbr = strdup(sys_siglist[signum]);
-
-	for (size_t i = 0; i < strlen(abbr); i++) {
-		abbr[i] = toupper(abbr[i]);
-	}
-#endif
-
-	log_debug("process received signal SIG%s, stopping listener...", abbr);
-
-	if (gettid() == getpid()) {
-		log_debug("main thread received signal SIG%s, exiting...", abbr);
-
-#if __GLIBC_MINOR__ < 32
-		free(abbr);
-#endif
-
-		raise(signum);
-	}
-}
-
 slavery_receiver_t *slavery_receiver_from_devnode(const char *devnode) {
 	log_debug("trying to create a receiver from devnod %s...", devnode);
 
@@ -392,12 +285,25 @@ slavery_receiver_t *slavery_receiver_from_devnode(const char *devnode) {
 		return NULL;
 	}
 
+	if (slavery_receiver_get_report_descriptor(receiver) < 0) {
+		log_warning(SLAVERY_ERROR_IO, "failed to get report descriptor");
+
+		close(receiver->control_pipe[0]);
+		close(receiver->control_pipe[1]);
+		close(receiver->fd);
+		free(receiver->name);
+		free(receiver->address);
+		free(receiver);
+
+		return NULL;
+	}
+
 	log_debug("found receiver %s on %s", receiver->name, receiver->devnode);
 	log_debug("starting receiver listener thread...");
 
-	if (pthread_create(
-	        &receiver->listener_thread, NULL, (pthread_callback_t)slavery_receiver_listen, receiver) != 0) {
-		log_warning(SLAVERY_ERROR_OS, "pthread_create() failed");
+	if ((errno = pthread_create(
+	         &receiver->listener_thread, NULL, (pthread_callback_t)slavery_receiver_listen, receiver)) != 0) {
+		log_warning_errno(SLAVERY_ERROR_OS, "pthread_create() failed");
 
 		close(receiver->control_pipe[0]);
 		close(receiver->control_pipe[1]);
@@ -446,25 +352,19 @@ int slavery_receiver_get_report_descriptor(slavery_receiver_t *receiver) {
 // FIXME: hidraw read read/writes full records, my pipe doesn't necessarily
 // FIXME: sending control events to pipe when not actively requested -> pipe grows and isn't read from.
 void *slavery_receiver_listen(slavery_receiver_t *receiver) {
-	if (pthread_setname_np(pthread_self(), "listener") != 0) {
-		log_warning(SLAVERY_ERROR_OS, "pthread_setname_np() failed");
+	if ((errno = pthread_setname_np(pthread_self(), "listener")) != 0) {
+		log_warning_errno(SLAVERY_ERROR_OS, "pthread_setname_np() failed");
 	}
 
 	log_debug("started");
 
-	struct sigaction sig_action = {.sa_handler = slavery_receiver_listener_signal_handler,
-	                               .sa_flags = SA_RESETHAND};
 	uint8_t response_data[SLAVERY_PACKET_LENGTH_MAX];
-
-	sigaction(SIGINT, &sig_action, NULL);
 
 	while (true) {
 		ssize_t response_size = read(receiver->fd, response_data, SLAVERY_PACKET_LENGTH_MAX);
 
 		if (response_size < 0) {
-			if (errno == EINTR) {
-				log_debug("read() interrupted, exiting...");
-			}
+			log_warning_errno(SLAVERY_ERROR_IO, "read()");
 
 			return NULL;
 		}
@@ -481,14 +381,14 @@ void *slavery_receiver_listen(slavery_receiver_t *receiver) {
 
 				pthread_attr_t attr;
 
-				if (pthread_attr_init(&attr) != 0) {
-					log_warning(SLAVERY_ERROR_OS, "pthread_attr_init() failed");
+				if ((errno = pthread_attr_init(&attr)) != 0) {
+					log_warning_errno(SLAVERY_ERROR_OS, "pthread_attr_init() failed");
 
 					return NULL;
 				}
 
-				if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0) {
-					log_warning(SLAVERY_ERROR_OS, "pthread_attr_setdetachstate() failed");
+				if ((errno = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED)) != 0) {
+					log_warning_errno(SLAVERY_ERROR_OS, "pthread_attr_setdetachstate() failed");
 
 					return NULL;
 				}
@@ -499,9 +399,9 @@ void *slavery_receiver_listen(slavery_receiver_t *receiver) {
 				event->data = malloc(response_size);
 				memcpy(event->data, response_data, response_size);
 
-				if (pthread_create(
-				        (pthread_t[]){0}, &attr, (pthread_callback_t)slavery_event_dispatch, event) != 0) {
-					log_warning(SLAVERY_ERROR_OS, "pthread_create() failed");
+				if ((errno = pthread_create(
+				         (pthread_t[]){0}, &attr, (pthread_callback_t)slavery_event_dispatch, event)) != 0) {
+					log_warning_errno(SLAVERY_ERROR_OS, "pthread_create() failed");
 
 					free(event->data);
 					free(event);
@@ -509,8 +409,8 @@ void *slavery_receiver_listen(slavery_receiver_t *receiver) {
 					return NULL;
 				}
 
-				if (pthread_attr_destroy(&attr) != 0) {
-					log_warning(SLAVERY_ERROR_OS, "pthread_attr_destroy() failed");
+				if ((errno = pthread_attr_destroy(&attr)) != 0) {
+					log_warning_errno(SLAVERY_ERROR_OS, "pthread_attr_destroy() failed");
 
 					free(event->data);
 					free(event);

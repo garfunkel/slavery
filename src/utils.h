@@ -19,7 +19,12 @@
 #define UNUSED(x) (void)(x)
 
 /**
- * @brief Set out information for HIDPP protocol errors.
+ * @brief Signature for pthread handler function.
+ */
+#define pthread_callback_t void *(*)(void *)
+
+/**
+ * @brief Set out information for HID++ protocol errors.
  */
 #define ERROR_MAP(ERROR)                                                        \
 	ERROR(SLAVERY_HIDPP_ERROR_SUCCESS, 0x00, "Success")                         \
@@ -50,6 +55,9 @@ typedef enum
 #undef ERROR_UNKNOWN
 } slavery_hidpp_error_t;
 
+/**
+ * @brief HID++ error to string.
+ */
 #pragma weak slavery_hidpp_error_to_string
 const char *slavery_hidpp_error_to_string(const slavery_hidpp_error_t error) {
 	switch (error) {
@@ -111,6 +119,7 @@ extern const char *LOG_LEVEL_ERROR;
 	ERROR(SLAVERY_ERROR_CONFIG, "Configuration error") \
 	ERROR(SLAVERY_ERROR_IO, "IO error")                \
 	ERROR(SLAVERY_ERROR_OS, "OS error")                \
+	ERROR(SLAVERY_ERROR_UDEV, "udev error")            \
 	ERROR(SLAVERY_ERROR_HIDPP, "HID++ protocol error") \
 	ERROR_UNKNOWN(SLAVERY_ERROR_UNKNOWN, "Unknown error")
 

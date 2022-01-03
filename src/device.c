@@ -172,10 +172,6 @@ slavery_feature_t *slavery_device_get_feature(slavery_device_t *device, slavery_
 	                          0x00};
 	uint8_t response_data[SLAVERY_PACKET_LENGTH_CONTROL_LONG];
 
-	printf("\nwriting to device\n");
-
-	sleep(5);
-
 	if (write(device->receiver->fd, request_data, SLAVERY_PACKET_LENGTH_CONTROL_SHORT) !=
 	    (ssize_t)SLAVERY_PACKET_LENGTH_CONTROL_SHORT) {
 		log_warning_errno(SLAVERY_ERROR_IO, "failed to request feature");

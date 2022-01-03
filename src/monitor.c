@@ -123,8 +123,6 @@ void *slavery_monitor_run(slavery_monitor_t *monitor) {
 		if (strcmp(action, "add") == 0) {
 			slavery_receiver_t *receiver = slavery_receiver_from_devnode(devnode);
 
-			sleep(1);
-
 			if (receiver == NULL) {
 				log_debug("failed to create receiver from devnode %s, ignoring devnode", devnode);
 			} else {

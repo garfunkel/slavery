@@ -19,9 +19,7 @@ int main(int argc, char *argv[]) {
 	slavery_config_t *config = slavery_config_new(argv[1]);
 
 	if (config->num_entries != 1) {
-		log_warning(SLAVERY_ERROR_CONFIG, "expected %u config entries, found %u", 1, config->num_entries);
-
-		return EXIT_FAILURE;
+		log_error(SLAVERY_ERROR_CONFIG, "expected %u config entries, found %u", 1, config->num_entries);
 	}
 
 	return EXIT_SUCCESS;
